@@ -1,6 +1,6 @@
 globalThis.__timing__.logStart('Load chunks/build/styles');const interopDefault = r => r.default || r || [];
 const styles = {
-  "node_modules/nuxt/dist/app/entry.js": () => import('./entry-styles.rfZCaJB0.mjs').then(interopDefault),
+  "node_modules/nuxt/dist/app/entry.js": () => import('./entry-styles.BECl3Ojd.mjs').then(interopDefault),
   "node_modules/nuxt/dist/app/components/error-404.vue": () => import('./error-404-styles.Pd4Strki.mjs').then(interopDefault),
   "node_modules/nuxt/dist/app/components/error-500.vue": () => import('./error-500-styles.BMmh3bAG.mjs').then(interopDefault)
 };
