@@ -235,14 +235,15 @@ export function useChallengeData() {
           .replace(/^-|-$/g, '')
         const [home, away] = label.split(/\s+v(?:s)?\.?\s+/i)
         return {
-          provider: source?.provider || 'manual',
+          provider: leg.provider || source?.provider || 'manual',
           provider_match_id: leg.matchId || source?.id || manualId,
           home_team: source?.home || home || label,
           away_team: source?.away || away || 'Selection',
           home_score: source?.homeScore ?? null,
           away_score: source?.awayScore ?? null,
           status: source?.status || 'scheduled',
-          minute: source?.minute || null
+          minute: source?.minute || null,
+          starts_at: leg.startsAt || source?.startsAt || null
         }
       })
       const { data: savedMatches, error: matchError } = await client

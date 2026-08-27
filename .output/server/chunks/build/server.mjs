@@ -1,5 +1,5 @@
 import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};globalThis.__timing__.logStart('Load chunks/build/server');import { hasInjectionContext, getCurrentInstance, defineComponent, shallowRef, h, resolveComponent, computed, unref, ref, inject, createApp, provide, shallowReactive, isVNode, createCommentVNode, onErrorCaptured, onServerPrefetch, createVNode, resolveDynamicComponent, reactive, effectScope, defineAsyncComponent, mergeProps, withCtx, getCurrentScope, toRef, Suspense, Fragment, createTextVNode, isReadonly, useSSRContext, isRef, isShallow, isReactive, toRaw } from 'vue';
-import { p as parseQuery, l as getContext, m as hasProtocol, n as joinURL, o as parseURL, e as encodePath, q as decodePath, s as isScriptProtocol, w as withQuery, t as withTrailingSlash, v as withoutTrailingSlash, x as sanitizeStatusCode, $ as $fetch, y as createHooks, c as createError$1, z as executeAsync, A as createDebugger, B as defu } from '../nitro/nitro.mjs';
+import { p as parseQuery, m as getContext, n as hasProtocol, o as joinURL, q as parseURL, e as encodePath, s as decodePath, t as isScriptProtocol, w as withQuery, v as withTrailingSlash, x as withoutTrailingSlash, y as sanitizeStatusCode, $ as $fetch, z as createHooks, c as createError$1, A as executeAsync, B as createDebugger, C as defu } from '../nitro/nitro.mjs';
 import { b as baseURL } from '../routes/renderer.mjs';
 import { RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
 import { ssrRenderSuspense, ssrRenderComponent, ssrRenderVNode, ssrRenderAttrs, ssrRenderSlot, ssrInterpolate } from 'vue/server-renderer';
@@ -579,7 +579,7 @@ const _routes = [
   {
     name: "index",
     path: "/",
-    component: () => import('./index-BK8oSEKS.mjs')
+    component: () => import('./index-BBEuwqFC.mjs')
   },
   {
     name: "login",
@@ -594,12 +594,12 @@ const _routes = [
   {
     name: "history",
     path: "/history",
-    component: () => import('./history-BbQfN2hK.mjs')
+    component: () => import('./history-D9RaryR_.mjs')
   },
   {
     name: "challenges",
     path: "/challenges",
-    component: () => import('./challenges-21mScU5B.mjs')
+    component: () => import('./challenges-LQzXFWX4.mjs')
   },
   {
     name: "invite-token",

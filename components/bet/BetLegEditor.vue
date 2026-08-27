@@ -1,12 +1,71 @@
 <script setup>
 const props = defineProps({ legs: { type: Array, default: () => [] } })
 const emit = defineEmits(['update:legs', 'add', 'remove'])
+const results = ref({})
+const searching = ref(null)
+const searchTimers = {}
 
 function update(index, key, value) {
   emit(
     'update:legs',
     props.legs.map((leg, itemIndex) => (itemIndex === index ? { ...leg, [key]: value } : leg))
   )
+}
+function updateMatch(index, value) {
+  emit(
+    'update:legs',
+    props.legs.map((leg, itemIndex) =>
+      itemIndex === index ? { ...leg, match: value, matchId: '', provider: '' } : leg
+    )
+  )
+}
+function handleMatchInput(index, value) {
+  updateMatch(index, value)
+  clearTimeout(searchTimers[index])
+  results.value = { ...results.value, [index]: [] }
+  if (value.trim().length < 2) return
+  searchTimers[index] = window.setTimeout(() => searchFixtures(index, value), 250)
+}
+async function searchFixtures(index, query) {
+  if (!query?.trim()) return
+  searching.value = index
+  try {
+    const response = await $fetch('/api/football/fixtures', { query: { q: query } })
+    results.value = { ...results.value, [index]: response.fixtures || [] }
+  } catch {
+    results.value = { ...results.value, [index]: [] }
+  } finally {
+    searching.value = null
+  }
+}
+function selectFixture(index, fixture) {
+  clearTimeout(searchTimers[index])
+  emit(
+    'update:legs',
+    props.legs.map((leg, itemIndex) =>
+      itemIndex === index
+        ? {
+            ...leg,
+            match: fixture.label,
+            matchId: fixture.id,
+            provider: fixture.provider,
+            competition: fixture.competition,
+            startsAt: fixture.startsAt
+          }
+        : leg
+    )
+  )
+  results.value = { ...results.value, [index]: [] }
+}
+onBeforeUnmount(() => Object.values(searchTimers).forEach(clearTimeout))
+function fixtureDate(value) {
+  if (!value) return 'Date unavailable'
+  return new Date(value).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 </script>
 
@@ -26,8 +85,21 @@ function update(index, key, value) {
           :id="`match-${index}`"
           :value="leg.match"
           placeholder="Match, e.g. Arsenal v Chelsea"
-          @input="update(index, 'match', $event.target.value)"
+          @input="handleMatchInput(index, $event.target.value)"
         />
+        <span v-if="searching === index" class="fixture-search-status">Searching fixtures…</span>
+        <div v-if="results[index]?.length" class="fixture-results">
+          <button
+            v-for="fixture in results[index]"
+            :key="fixture.id"
+            type="button"
+            class="fixture-result"
+            @click="selectFixture(index, fixture)"
+          >
+            <strong>{{ fixture.label }}</strong
+            ><small>{{ fixture.competition }} · {{ fixtureDate(fixture.startsAt) }}</small>
+          </button>
+        </div>
         <div class="leg-subfields">
           <label class="sr-only" :for="`market-${index}`">Market {{ index + 1 }}</label
           ><select
@@ -67,3 +139,46 @@ function update(index, key, value) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.fixture-search-status {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.fixture-results {
+  display: grid;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.fixture-result {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fafaff;
+  color: var(--ink);
+  text-align: left;
+}
+
+.fixture-result strong,
+.fixture-result small {
+  display: block;
+}
+
+.fixture-result strong {
+  font-size: 10px;
+}
+
+.fixture-result small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 9px;
+}
+</style>
