@@ -61,6 +61,7 @@ function outcome(item) {
       <span class="empty-icon">◌</span><strong>No league history yet</strong
       ><span>Settled weeks will appear here.</span>
     </div>
+    
   </div>
 </template>
 
