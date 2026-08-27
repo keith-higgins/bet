@@ -1,13 +1,139 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-const { loadRounds, updateRound, deleteChallenge, createRound, loading, lastError } = useChallengeData()
-const rounds = ref([]); const form = ref({ title: '', stake: 20, deadline: '' }); const editing = ref(null); const creating = ref(false); const notice = ref('')
-const money = value => `€ ${Number(value || 0).toFixed(2)}`
-const refresh = async () => { rounds.value = await loadRounds() }
-const edit = item => { editing.value = item.id; form.value = { title: item.title, stake: item.stake, deadline: item.deadline.slice(0, 16) } }
-async function save(item) { const ok = await updateRound(item.id, { title: form.value.title, stake: Number(form.value.stake), deadline: new Date(form.value.deadline).toISOString() }); if (ok) { editing.value = null; await refresh(); notice.value = 'Challenge updated.' } else notice.value = lastError.value }
-async function remove(item) { if (!confirm(`Delete Week ${item.week} and all bets?`)) return; if (await deleteChallenge(item.challengeId)) { await refresh(); notice.value = 'Challenge deleted.' } else notice.value = lastError.value }
-async function create() { const current = rounds.value[0]; const item = await createRound({ challengeId: current?.challengeId, week: (current?.week || 0) + 1, title: form.value.title || `Week ${(current?.week || 0) + 1} challenge`, bettorId: current?.bettorId, stake: Number(form.value.stake) || 20, deadline: form.value.deadline ? new Date(form.value.deadline).toISOString() : new Date(Date.now() + 604800000).toISOString() }); if (item) { creating.value = false; await refresh(); notice.value = 'Challenge created.' } else notice.value = lastError.value }
+const { players } = usePlayerContext()
+const {
+  loadRounds,
+  updateWeek,
+  deleteWeek,
+  createWeek,
+  createInitialWeek,
+  loadAssignableUsers,
+  saveBetToDatabase,
+  loading,
+  lastError
+} = useChallengeData()
+const rounds = ref([])
+const assignableUsers = ref([])
+const creating = ref(false)
+const editingBet = ref(null)
+const notice = ref('')
+const money = (value) => `€ ${Number(value || 0).toFixed(2)}`
+const refresh = async () => {
+  rounds.value = await loadRounds()
+  assignableUsers.value = await loadAssignableUsers()
+}
+async function save(item, changes) {
+  const ok = await updateWeek(item.id, changes)
+  notice.value = ok ? 'Week updated.' : lastError.value
+  if (ok) await refresh()
+}
+async function saveBet(betDetails) {
+  if (!editingBet.value) return
+  const item = rounds.value.find((round) =>
+    round.bets?.some((bet) => bet.id === editingBet.value.id)
+  )
+  if (!item) return
+  const saved = await saveBetToDatabase({
+    roundId: item.id,
+    bettorId: editingBet.value.bettorId || item.bettorId,
+    bet: editingBet.value,
+    legs: betDetails.legs,
+    matches: []
+  })
+  notice.value = saved ? 'Bet updated.' : lastError.value
+  if (saved) {
+    editingBet.value = null
+    await refresh()
+  }
+}
+async function remove(item) {
+  if (!confirm(`Delete Week ${item.week} and all bets?`)) return
+  if (await deleteWeek(item.id)) {
+    await refresh()
+    notice.value = 'Week deleted.'
+  } else notice.value = lastError.value
+}
+async function create(details) {
+  const current = rounds.value[0]
+  if (!current) {
+    const item = await createInitialWeek(details)
+    if (item) {
+      creating.value = false
+      await refresh()
+      notice.value = 'Week created.'
+    } else notice.value = lastError.value
+    return
+  }
+  const nextBettorId =
+    assignableUsers.value.find((member) => member.userId !== current.bettorId)?.userId ||
+    current?.members?.find((member) => member.userId !== current.bettorId)?.userId ||
+    current?.bettorId
+  const item = await createWeek({
+    week: (current?.week || 0) + 1,
+    title: details.title || `Premier League week ${(current?.week || 0) + 1}`,
+    bettorId: details.bettorId || nextBettorId,
+    stake: Number(details.stake) || 20,
+    deadline: details.deadline
+      ? new Date(details.deadline).toISOString()
+      : new Date(Date.now() + 604800000).toISOString()
+  })
+  if (item) {
+    creating.value = false
+    await refresh()
+    notice.value = 'Week created.'
+  } else notice.value = lastError.value
+}
 onMounted(refresh)
 </script>
-<template><div class="app-shell"><aside class="sidebar"><div class="brand"><div class="brand-mark"><span/><span/></div><div><strong>double<span>chance</span></strong><small>challenge tracker</small></div></div><div class="side-label">Workspace</div><nav class="main-nav"><NuxtLink class="nav-item" to="/">▦ <span>Overview</span></NuxtLink><NuxtLink class="nav-item" to="/admin">♙ <span>Manage players</span></NuxtLink><NuxtLink class="nav-item active" to="/challenges">⚙ <span>Manage challenges</span></NuxtLink></nav></aside><main class="admin-page"><section class="admin-card"><NuxtLink class="back-link" to="/">← Back to overview</NuxtLink><div class="admin-heading"><div><p class="overline">ADMINISTRATION</p><h1>Manage challenges</h1><p>Create, edit, and remove weekly rounds and bets.</p></div><button class="primary-button" @click="creating=true">＋ New challenge</button></div><p v-if="notice" class="auth-success">{{ notice }}</p><div class="challenge-list"><article v-for="item in rounds" :key="item.id" class="managed-challenge"><template v-if="editing !== item.id"><div><span class="week-kicker">WEEK {{ item.week }} · {{ item.status }}</span><h2>{{ item.title }}</h2><small>{{ item.dates }} · {{ money(item.stake) }} stake</small><div v-if="item.bets[0]" class="managed-bet"><strong>{{ item.bets[0].type }}</strong><span>{{ item.bets[0].selections.length }} legs · {{ item.bets[0].status }}</span><small>{{ money(item.bets[0].stake) }} stake · {{ item.bets[0].actualReturn == null ? 'No return yet' : money(item.bets[0].actualReturn) }}</small></div></div><div class="managed-actions"><NuxtLink class="outline-button" to="/">Open overview</NuxtLink><button class="outline-button" @click="edit(item)">Edit challenge</button><button class="outline-button danger-button" @click="remove(item)">Delete</button></div></template><template v-else><label>Title<input v-model="form.title"/></label><label>Stake (€)<input v-model.number="form.stake" type="number" min="1"/></label><label>Deadline<input v-model="form.deadline" type="datetime-local"/></label><div class="managed-actions"><button class="outline-button" @click="editing=null">Cancel</button><button class="primary-button" @click="save(item)">Save</button></div></template></article><div v-if="!rounds.length" class="empty-state"><strong>No challenges yet</strong><span>Create the first weekly challenge.</span></div></div></section></main></div><div v-if="creating" class="modal-backdrop"><section class="modal"><button class="modal-close" @click="creating=false">×</button><p class="overline">NEW ROUND</p><h2>Create challenge</h2><label>Title<input v-model="form.title" placeholder="Weekend challenge"/></label><label>Stake (€)<input v-model.number="form.stake" type="number" min="1"/></label><label>Deadline<input v-model="form.deadline" type="datetime-local"/></label><button class="primary-button full-width" :disabled="loading" @click="create">Create challenge →</button></section></div></template>
+
+<template>
+  <div>
+    <div class="page-wrap manage-page">
+      <NuxtLink class="back-link" to="/admin">← Back to manage</NuxtLink>
+      <section class="page-heading inline-heading">
+        <div>
+          <p class="overline">ADMINISTRATION</p>
+          <h1>Manage weeks</h1>
+          <p class="subheading">Create, edit, and remove weekly turns and bets.</p>
+        </div>
+        <button class="primary-button" type="button" @click="creating = true">＋ New week</button>
+      </section>
+      <p v-if="notice" class="auth-success">{{ notice }}</p>
+      <div class="challenge-list">
+        <ManagedChallengeCard
+          v-for="item in rounds"
+          :key="item.id"
+          :item="item"
+          :money="money"
+          :users="assignableUsers"
+          @save="(changes) => save(item, changes)"
+          @edit-bet="editingBet = $event"
+          @remove="remove(item)"
+        />
+        <div v-if="!rounds.length" class="empty-state">
+          <strong>No weeks yet</strong><span>Create the first Premier League week.</span>
+        </div>
+      </div>
+    </div>
+    <NewRoundFlow
+      :open="creating"
+      :loading="loading"
+      :members="rounds[0]?.members || players"
+      :users="assignableUsers"
+      :default-bettor-id="
+        rounds[0]?.members?.find((member) => member.userId !== rounds[0]?.bettorId)?.userId ||
+        rounds[0]?.bettorId
+      "
+      @close="creating = false"
+      @save="create"
+    />
+    <BetEntryFlow
+      :open="Boolean(editingBet)"
+      :initial-stake="editingBet?.stake || 20"
+      :initial-legs="editingBet?.selections || []"
+      :loading="loading"
+      :money="money"
+      @close="editingBet = null"
+      @save="saveBet"
+    />
+  </div>
+</template>

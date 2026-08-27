@@ -1,26 +1,47 @@
-<template><main class="auth-page"><div class="auth-card"><p class="overline">YOU’RE INVITED</p><h1>{{ statusTitle }}</h1><p>{{ statusMessage }}</p><div v-if="!signedIn" class="invite-preview"><strong>Double Chance</strong><small>Weekly football challenge · private players only</small></div><NuxtLink v-if="signedIn" class="primary-button full-width" to="/">Open dashboard →</NuxtLink><NuxtLink v-else class="primary-button full-width" to="/login">Continue with email login →</NuxtLink></div></main></template>
+<template>
+  <main class="auth-page">
+    <div class="auth-card">
+      <p class="overline">YOU’RE INVITED</p>
+      <h1>{{ statusTitle }}</h1>
+      <p>{{ statusMessage }}</p>
+      <div v-if="!signedIn" class="invite-preview">
+        <strong>Double Chance</strong><small>Weekly Premier League betting game</small>
+      </div>
+      <NuxtLink v-if="signedIn" class="primary-button full-width" to="/">Open dashboard →</NuxtLink
+      ><NuxtLink v-else class="primary-button full-width" to="/login"
+        >Continue with email login →</NuxtLink
+      >
+    </div>
+  </main>
+</template>
 <script setup>
-import { createClient } from '@supabase/supabase-js'
+import { useSupabaseClient } from '~/lib/supabase'
 
 const statusTitle = ref('Accepting invite')
-const statusMessage = ref('We’re signing you in and joining the challenge…')
+const statusMessage = ref('We’re signing you in and joining the weekly game…')
 const signedIn = ref(false)
 const config = useRuntimeConfig()
+const supabase = useSupabaseClient()
 let authSubscription
 
 onMounted(async () => {
-  if (!config.public.supabaseUrl || !config.public.supabaseAnonKey) { statusTitle.value = 'Supabase is not configured'; statusMessage.value = 'Add the Supabase environment variables before accepting this invite.'; return }
-  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+  if (!config.public.supabaseUrl || !config.public.supabaseAnonKey) {
+    statusTitle.value = 'Supabase is not configured'
+    statusMessage.value = 'Add the Supabase environment variables before accepting this invite.'
+    return
+  }
   const checkSession = async (session) => {
     if (!session) return
     signedIn.value = true
     statusTitle.value = 'You’re in'
-    statusMessage.value = 'Your account has joined the challenge. Redirecting to the dashboard…'
+    statusMessage.value = 'Your account is ready. Redirecting to the dashboard…'
     await navigateTo('/')
   }
   const current = await supabase.auth.getSession()
   await checkSession(current.data.session)
-  const listener = supabase.auth.onAuthStateChange((_event, session) => { checkSession(session) })
+  const listener = supabase.auth.onAuthStateChange((_event, session) => {
+    checkSession(session)
+  })
   authSubscription = listener.data.subscription
 })
 onUnmounted(() => authSubscription?.unsubscribe())

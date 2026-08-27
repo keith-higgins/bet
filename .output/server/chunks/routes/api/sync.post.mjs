@@ -23,7 +23,12 @@ function getFootballProvider() {
   return new FootballProvider();
 }
 
-const sync_post = defineEventHandler(async () => ({ ok: true, provider: "not-configured", matches: await getFootballProvider().getLiveMatches(), syncedAt: (/* @__PURE__ */ new Date()).toISOString() }));
+const sync_post = defineEventHandler(async () => ({
+  ok: true,
+  provider: "not-configured",
+  matches: await getFootballProvider().getLiveMatches(),
+  syncedAt: (/* @__PURE__ */ new Date()).toISOString()
+}));
 
 export { sync_post as default };;globalThis.__timing__.logEnd('Load chunks/routes/api/sync.post');
 //# sourceMappingURL=sync.post.mjs.map

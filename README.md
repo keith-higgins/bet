@@ -1,16 +1,15 @@
 # Double Chance
 
-Mobile-first football betting challenge tracker.
+Mobile-first Premier League betting tracker.
 
 ## Run locally
 
 ```bash
 npm install
-npm install
 npm run dev
 ```
 
-The dashboard starts with empty challenge and match states until Supabase and a football provider are configured.
+The dashboard starts with empty weekly and match states until Supabase and a football provider are configured.
 
 The frontend uses Nuxt 3, Vue 3, and JavaScript.
 

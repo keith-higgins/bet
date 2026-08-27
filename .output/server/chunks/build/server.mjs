@@ -1,9 +1,8 @@
-import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};globalThis.__timing__.logStart('Load chunks/build/server');import { hasInjectionContext, getCurrentInstance, defineComponent, shallowRef, h, resolveComponent, computed, unref, ref, inject, createApp, provide, shallowReactive, isVNode, createCommentVNode, onErrorCaptured, onServerPrefetch, createVNode, resolveDynamicComponent, reactive, effectScope, defineAsyncComponent, mergeProps, getCurrentScope, toRef, Suspense, withCtx, createTextVNode, Fragment, isReadonly, useSSRContext, isRef, isShallow, isReactive, toRaw } from 'vue';
-import { l as hasProtocol, m as isScriptProtocol, n as joinURL, p as parseQuery, w as withQuery, s as sanitizeStatusCode, o as parseURL, e as encodePath, q as decodePath, t as getContext, v as withTrailingSlash, x as withoutTrailingSlash, $ as $fetch, y as createHooks, c as createError$1, z as executeAsync, A as createDebugger, B as defu } from '../nitro/nitro.mjs';
+import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};globalThis.__timing__.logStart('Load chunks/build/server');import { hasInjectionContext, getCurrentInstance, defineComponent, shallowRef, h, resolveComponent, computed, unref, ref, inject, createApp, provide, shallowReactive, isVNode, createCommentVNode, onErrorCaptured, onServerPrefetch, createVNode, resolveDynamicComponent, reactive, effectScope, defineAsyncComponent, mergeProps, withCtx, getCurrentScope, toRef, Suspense, Fragment, createTextVNode, isReadonly, useSSRContext, isRef, isShallow, isReactive, toRaw } from 'vue';
+import { p as parseQuery, l as getContext, m as hasProtocol, n as joinURL, o as parseURL, e as encodePath, q as decodePath, s as isScriptProtocol, w as withQuery, t as withTrailingSlash, v as withoutTrailingSlash, x as sanitizeStatusCode, $ as $fetch, y as createHooks, c as createError$1, z as executeAsync, A as createDebugger, B as defu } from '../nitro/nitro.mjs';
 import { b as baseURL } from '../routes/renderer.mjs';
 import { RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
-import { createClient } from '@supabase/supabase-js';
-import { ssrRenderSuspense, ssrRenderComponent, ssrRenderVNode, ssrRenderAttrs } from 'vue/server-renderer';
+import { ssrRenderSuspense, ssrRenderComponent, ssrRenderVNode, ssrRenderAttrs, ssrRenderSlot, ssrInterpolate } from 'vue/server-renderer';
 import 'node:http';
 import 'node:https';
 import 'node:events';
@@ -575,47 +574,37 @@ const _routes = [
   {
     name: "admin",
     path: "/admin",
-    component: () => import('./admin-Gle4jwDd.mjs')
+    component: () => import('./admin-4HvU2In-.mjs')
   },
   {
     name: "index",
     path: "/",
-    component: () => import('./index-CQqsAmab.mjs')
+    component: () => import('./index-CfBz8LuW.mjs')
   },
   {
     name: "login",
     path: "/login",
-    component: () => import('./login-KUDhvU4v.mjs')
+    component: () => import('./login-SILreNzE.mjs')
   },
   {
     name: "account",
     path: "/account",
-    component: () => import('./account-BQ8eU9Pg.mjs')
+    component: () => import('./account-CF8aSDaC.mjs')
+  },
+  {
+    name: "history",
+    path: "/history",
+    component: () => import('./history-c1Mu9trz.mjs')
   },
   {
     name: "challenges",
     path: "/challenges",
-    component: () => import('./challenges-DW2v-Kfr.mjs')
+    component: () => import('./challenges-21mScU5B.mjs')
   },
   {
     name: "invite-token",
     path: "/invite/:token()",
-    component: () => import('./_token_-C0TWIH0c.mjs')
-  },
-  {
-    name: "challenge-challengeId",
-    path: "/challenge/:challengeId()",
-    component: () => import('./index-2ptKh-7k.mjs')
-  },
-  {
-    name: "challenge-challengeId-settings",
-    path: "/challenge/:challengeId()/settings",
-    component: () => import('./settings-DSg1df_J.mjs')
-  },
-  {
-    name: "challenge-challengeId-round-roundId",
-    path: "/challenge/:challengeId()/round/:roundId()",
-    component: () => import('./_roundId_-D2oIBwYY.mjs')
+    component: () => import('./_token_-BGgDdZ5J.mjs')
   }
 ];
 const validate = /* @__PURE__ */ defineNuxtRouteMiddleware(async (to) => {
@@ -640,13 +629,8 @@ const validate = /* @__PURE__ */ defineNuxtRouteMiddleware(async (to) => {
   return error;
 });
 const auth_45global = /* @__PURE__ */ defineNuxtRouteMiddleware(async (to) => {
-  let __temp, __restore;
   if (to.path === "/login" || to.path.startsWith("/invite")) return;
-  const config = /* @__PURE__ */ useRuntimeConfig();
-  if (!config.public.supabaseUrl || !config.public.supabaseAnonKey) return;
-  const client = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey);
-  const { data } = ([__temp, __restore] = executeAsync(() => client.auth.getSession()), __temp = await __temp, __restore(), __temp);
-  if (!data.session) return navigateTo("/login");
+  return;
 });
 const manifest_45route_45rule = /* @__PURE__ */ defineNuxtRouteMiddleware((to) => {
   {
@@ -1238,6 +1222,216 @@ function applyTrailingSlashBehavior(to, trailingSlash) {
   }
   return normalizeFn(to, true);
 }
+const _sfc_main$6 = {
+  __name: "AppSidebar",
+  __ssrInlineRender: true,
+  setup(__props) {
+    const route = useRoute();
+    const manageActive = computed(() => route.path === "/admin" || route.path === "/challenges");
+    return (_ctx, _push, _parent, _attrs) => {
+      const _component_NuxtLink = __nuxt_component_0$1;
+      _push(`<aside${ssrRenderAttrs(mergeProps({ class: "sidebar shared-sidebar" }, _attrs))}>`);
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        class: "brand",
+        to: "/",
+        "aria-label": "Double Chance home"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<div class="brand-mark" aria-hidden="true"${_scopeId}><span${_scopeId}></span><span${_scopeId}></span></div><div${_scopeId}><strong${_scopeId}>double<span${_scopeId}>chance</span></strong><small${_scopeId}>Premier League tracker</small></div>`);
+          } else {
+            return [
+              createVNode("div", {
+                class: "brand-mark",
+                "aria-hidden": "true"
+              }, [
+                createVNode("span"),
+                createVNode("span")
+              ]),
+              createVNode("div", null, [
+                createVNode("strong", null, [
+                  createTextVNode("double"),
+                  createVNode("span", null, "chance")
+                ]),
+                createVNode("small", null, "Premier League tracker")
+              ])
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(`<div class="side-label">Workspace</div><nav class="main-nav" aria-label="Primary navigation">`);
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        class: "nav-item",
+        to: "/",
+        "exact-active-class": "active"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<span class="nav-icon"${_scopeId}>⌂</span><span${_scopeId}>Overview</span>`);
+          } else {
+            return [
+              createVNode("span", { class: "nav-icon" }, "⌂"),
+              createVNode("span", null, "Overview")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        class: ["nav-item", { active: unref(manageActive) }],
+        to: "/admin"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<span class="nav-icon"${_scopeId}>＋</span><span${_scopeId}>Manage</span>`);
+          } else {
+            return [
+              createVNode("span", { class: "nav-icon" }, "＋"),
+              createVNode("span", null, "Manage")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        class: "nav-item",
+        to: "/account",
+        "exact-active-class": "active"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<span class="nav-icon"${_scopeId}>●</span><span${_scopeId}>Account</span>`);
+          } else {
+            return [
+              createVNode("span", { class: "nav-icon" }, "●"),
+              createVNode("span", null, "Account")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(`</nav><div class="side-spacer"></div></aside>`);
+    };
+  }
+};
+const _sfc_setup$6 = _sfc_main$6.setup;
+_sfc_main$6.setup = (props, ctx) => {
+  const ssrContext = useSSRContext();
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/AppSidebar.vue");
+  return _sfc_setup$6 ? _sfc_setup$6(props, ctx) : void 0;
+};
+const _sfc_main$5 = {
+  __name: "AppTopBar",
+  __ssrInlineRender: true,
+  setup(__props) {
+    const route = useRoute();
+    const pageTitle = computed(() => {
+      if (route.path === "/history") return "History";
+      if (route.path === "/admin") return "Manage";
+      if (route.path === "/challenges") return "Manage weeks";
+      if (route.path === "/account") return "Account";
+      return "Overview";
+    });
+    return (_ctx, _push, _parent, _attrs) => {
+      const _component_NuxtLink = __nuxt_component_0$1;
+      _push(`<header${ssrRenderAttrs(mergeProps({ class: "topbar" }, _attrs))}><div class="breadcrumbs"><span>Premier League</span><b>/</b><strong>${ssrInterpolate(unref(pageTitle))}</strong></div><div class="top-actions"><span class="sync-status"><i class="live-dot"></i>Shared league</span>`);
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        class: "avatar purple",
+        to: "/account",
+        "aria-label": "Open account"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`ME`);
+          } else {
+            return [
+              createTextVNode("ME")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(`</div></header>`);
+    };
+  }
+};
+const _sfc_setup$5 = _sfc_main$5.setup;
+_sfc_main$5.setup = (props, ctx) => {
+  const ssrContext = useSSRContext();
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/AppTopBar.vue");
+  return _sfc_setup$5 ? _sfc_setup$5(props, ctx) : void 0;
+};
+const _sfc_main$4 = {
+  __name: "MobileBottomNav",
+  __ssrInlineRender: true,
+  setup(__props) {
+    const route = useRoute();
+    const manageActive = computed(() => route.path === "/admin" || route.path === "/challenges");
+    return (_ctx, _push, _parent, _attrs) => {
+      const _component_NuxtLink = __nuxt_component_0$1;
+      _push(`<nav${ssrRenderAttrs(mergeProps({
+        class: "mobile-bottom-nav",
+        "aria-label": "Mobile navigation"
+      }, _attrs))}>`);
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        to: "/",
+        "exact-active-class": "active"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<span class="mobile-nav-icon"${_scopeId}>⌂</span><span${_scopeId}>Home</span>`);
+          } else {
+            return [
+              createVNode("span", { class: "mobile-nav-icon" }, "⌂"),
+              createVNode("span", null, "Home")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        to: "/admin",
+        class: { active: unref(manageActive) }
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<span class="mobile-nav-icon"${_scopeId}>＋</span><span${_scopeId}>Manage</span>`);
+          } else {
+            return [
+              createVNode("span", { class: "mobile-nav-icon" }, "＋"),
+              createVNode("span", null, "Manage")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(ssrRenderComponent(_component_NuxtLink, {
+        to: "/account",
+        "exact-active-class": "active"
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(`<span class="mobile-nav-icon"${_scopeId}>●</span><span${_scopeId}>Account</span>`);
+          } else {
+            return [
+              createVNode("span", { class: "mobile-nav-icon" }, "●"),
+              createVNode("span", null, "Account")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(`</nav>`);
+    };
+  }
+};
+const _sfc_setup$4 = _sfc_main$4.setup;
+_sfc_main$4.setup = (props, ctx) => {
+  const ssrContext = useSSRContext();
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/MobileBottomNav.vue");
+  return _sfc_setup$4 ? _sfc_setup$4(props, ctx) : void 0;
+};
 const _export_sfc = (sfc, props) => {
   const target = sfc.__vccOpts || sfc;
   for (const [key, val] of props) {
@@ -1247,78 +1441,23 @@ const _export_sfc = (sfc, props) => {
 };
 const _sfc_main$3 = {};
 function _sfc_ssrRender(_ctx, _push, _parent, _attrs) {
-  const _component_NuxtLink = __nuxt_component_0$1;
-  _push(`<aside${ssrRenderAttrs(mergeProps({ class: "sidebar shared-sidebar" }, _attrs))}><div class="brand"><div class="brand-mark"><span></span><span></span></div><div><strong>double<span>chance</span></strong><small>challenge tracker</small></div></div><div class="side-label">Workspace</div><nav class="main-nav">`);
-  _push(ssrRenderComponent(_component_NuxtLink, {
-    class: "nav-item",
-    to: "/"
-  }, {
-    default: withCtx((_, _push2, _parent2, _scopeId) => {
-      if (_push2) {
-        _push2(`▦ <span${_scopeId}>Overview</span>`);
-      } else {
-        return [
-          createTextVNode("▦ "),
-          createVNode("span", null, "Overview")
-        ];
-      }
-    }),
-    _: 1
-  }, _parent));
-  _push(ssrRenderComponent(_component_NuxtLink, {
-    class: "nav-item",
-    to: "/admin"
-  }, {
-    default: withCtx((_, _push2, _parent2, _scopeId) => {
-      if (_push2) {
-        _push2(`♙ <span${_scopeId}>Manage players</span>`);
-      } else {
-        return [
-          createTextVNode("♙ "),
-          createVNode("span", null, "Manage players")
-        ];
-      }
-    }),
-    _: 1
-  }, _parent));
-  _push(ssrRenderComponent(_component_NuxtLink, {
-    class: "nav-item",
-    to: "/challenges"
-  }, {
-    default: withCtx((_, _push2, _parent2, _scopeId) => {
-      if (_push2) {
-        _push2(`⚙ <span${_scopeId}>Manage challenges</span>`);
-      } else {
-        return [
-          createTextVNode("⚙ "),
-          createVNode("span", null, "Manage challenges")
-        ];
-      }
-    }),
-    _: 1
-  }, _parent));
-  _push(ssrRenderComponent(_component_NuxtLink, {
-    class: "nav-item",
-    to: "/account"
-  }, {
-    default: withCtx((_, _push2, _parent2, _scopeId) => {
-      if (_push2) {
-        _push2(`♙ <span${_scopeId}>Account</span>`);
-      } else {
-        return [
-          createTextVNode("♙ "),
-          createVNode("span", null, "Account")
-        ];
-      }
-    }),
-    _: 1
-  }, _parent));
-  _push(`</nav><div class="side-spacer"></div><div class="next-turn-card"><div class="eyebrow">✦ Next up</div><div class="turn-person"><div class="avatar yellow">FR</div><div><strong>Friend&#39;s turn</strong><small>Next round · €20 default stake</small></div></div></div></aside>`);
+  const _component_AppSidebar = _sfc_main$6;
+  const _component_AppTopBar = _sfc_main$5;
+  const _component_MobileBottomNav = _sfc_main$4;
+  _push(`<div${ssrRenderAttrs(mergeProps({ class: "app-shell" }, _attrs))}>`);
+  _push(ssrRenderComponent(_component_AppSidebar, null, null, _parent));
+  _push(`<div class="app-main">`);
+  _push(ssrRenderComponent(_component_AppTopBar, null, null, _parent));
+  _push(`<main class="app-page">`);
+  ssrRenderSlot(_ctx.$slots, "default", {}, null, _push, _parent);
+  _push(`</main></div>`);
+  _push(ssrRenderComponent(_component_MobileBottomNav, null, null, _parent));
+  _push(`</div>`);
 }
 const _sfc_setup$3 = _sfc_main$3.setup;
 _sfc_main$3.setup = (props, ctx) => {
   const ssrContext = useSSRContext();
-  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/AppSidebar.vue");
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/AppShell.vue");
   return _sfc_setup$3 ? _sfc_setup$3(props, ctx) : void 0;
 };
 const __nuxt_component_0 = /* @__PURE__ */ _export_sfc(_sfc_main$3, [["ssrRender", _sfc_ssrRender]]);
@@ -1424,18 +1563,26 @@ const _sfc_main$2 = {
   __ssrInlineRender: true,
   setup(__props) {
     const route = useRoute();
-    const showSidebar = computed(() => route.path !== "/login" && !route.path.startsWith("/invite"));
+    const showShell = computed(() => route.path !== "/login" && !route.path.startsWith("/invite"));
     return (_ctx, _push, _parent, _attrs) => {
-      const _component_AppSidebar = __nuxt_component_0;
+      const _component_AppShell = __nuxt_component_0;
       const _component_NuxtPage = __nuxt_component_1;
-      _push(`<!--[-->`);
-      if (unref(showSidebar)) {
-        _push(ssrRenderComponent(_component_AppSidebar, null, null, _parent));
+      if (unref(showShell)) {
+        _push(ssrRenderComponent(_component_AppShell, _attrs, {
+          default: withCtx((_, _push2, _parent2, _scopeId) => {
+            if (_push2) {
+              _push2(ssrRenderComponent(_component_NuxtPage, null, null, _parent2, _scopeId));
+            } else {
+              return [
+                createVNode(_component_NuxtPage)
+              ];
+            }
+          }),
+          _: 1
+        }, _parent));
       } else {
-        _push(`<!---->`);
+        _push(ssrRenderComponent(_component_NuxtPage, _attrs, null, _parent));
       }
-      _push(ssrRenderComponent(_component_NuxtPage, null, null, _parent));
-      _push(`<!--]-->`);
     };
   }
 };
@@ -1459,8 +1606,8 @@ const _sfc_main$1 = {
     const statusText = _error.statusMessage ?? (is404 ? "Page Not Found" : "Internal Server Error");
     const description = _error.message || _error.toString();
     const stack = void 0;
-    const _Error404 = defineAsyncComponent(() => import('./error-404-C8dZ5HB5.mjs'));
-    const _Error = defineAsyncComponent(() => import('./error-500-DVj9a3d7.mjs'));
+    const _Error404 = defineAsyncComponent(() => import('./error-404-BmqHBHup.mjs'));
+    const _Error = defineAsyncComponent(() => import('./error-500-DbLNzBXJ.mjs'));
     const ErrorTemplate = is404 ? _Error404 : _Error;
     return (_ctx, _push, _parent, _attrs) => {
       _push(ssrRenderComponent(unref(ErrorTemplate), mergeProps({ status: unref(status), statusText: unref(statusText), statusCode: unref(status), statusMessage: unref(statusText), description: unref(description), stack: unref(stack) }, _attrs), null, _parent));
@@ -1552,5 +1699,5 @@ let entry;
 }
 const entry_default = ((ssrContext) => entry(ssrContext));
 
-export { _export_sfc as _, __nuxt_component_0$1 as a, entry_default as default, navigateTo as n, tryUseNuxtApp as t, useRuntimeConfig as u };;globalThis.__timing__.logEnd('Load chunks/build/server');
+export { _export_sfc as _, __nuxt_component_0$1 as a, useRuntimeConfig as b, entry_default as default, tryUseNuxtApp as t, useNuxtApp as u };;globalThis.__timing__.logEnd('Load chunks/build/server');
 //# sourceMappingURL=server.mjs.map

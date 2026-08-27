@@ -2,6 +2,24 @@
   "name": "double-chance",
   "version": "0.1.0",
   "private": true,
-  "scripts": { "dev": "nuxt dev --dotenv .env.local", "build": "nuxt build", "preview": "nuxt preview" },
-  "dependencies": { "nuxt": "^3.13.2", "vue": "^3.5.12", "@supabase/supabase-js": "^2.45.4" }
+  "scripts": {
+    "dev": "nuxt dev --dotenv .env.local",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "lint": "nuxt prepare && eslint .",
+    "lint:fix": "nuxt prepare && eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "nuxt": "^3.13.2",
+    "vue": "^3.5.12"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.6"
+  }
 }

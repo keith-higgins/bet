@@ -1,10 +1,3 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { createClient } from '@supabase/supabase-js'
-const config = useRuntimeConfig(); const client = config.public.supabaseUrl && config.public.supabaseAnonKey ? createClient(config.public.supabaseUrl, config.public.supabaseAnonKey) : null
-const name = ref(''); const password = ref(''); const confirmation = ref(''); const message = ref(''); const error = ref(''); const loading = ref(false)
-onMounted(async () => { const result = await client?.auth.getUser(); name.value = result?.data?.user?.user_metadata?.display_name || '' })
-async function saveAccount() { message.value = ''; error.value = ''; if (password.value && password.value !== confirmation.value) { error.value = 'Passwords do not match.'; return }; if (password.value && password.value.length < 6) { error.value = 'Password must be at least 6 characters.'; return }; loading.value = true; const updates = { data: { display_name: name.value.trim() } }; if (password.value) updates.password = password.value; const { error: updateError } = await client.auth.updateUser(updates); loading.value = false; if (updateError) error.value = updateError.message; else { message.value = password.value ? 'Account and password updated.' : 'Account updated.'; password.value = ''; confirmation.value = '' } }
-async function logout() { await client?.auth.signOut(); await navigateTo('/login') }
-</script>
-<template><div class="app-shell"><main class="account-page"><section class="auth-card"><NuxtLink class="back-link" to="/">← Back to dashboard</NuxtLink><p class="overline">ACCOUNT SETTINGS</p><h1>Your account</h1><p>Update your name or add a password for email login. Your challenge permissions stay unchanged.</p><form @submit.prevent="saveAccount"><label>Display name<input v-model="name" type="text" maxlength="60" placeholder="Your name" required/></label><label>New password<input v-model="password" type="password" minlength="6" placeholder="Leave blank to keep current password"/></label><label>Confirm password<input v-model="confirmation" type="password" minlength="6" placeholder="Repeat new password"/></label><p v-if="message" class="auth-success">{{ message }}</p><p v-if="error" class="auth-error">{{ error }}</p><button class="primary-button full-width" :disabled="loading">{{ loading ? 'Saving…' : 'Save account →' }}</button></form><button class="logout-button" @click="logout">Log out</button></section></main></div></template>
+<template>
+  <div class="account-page"><AccountForm /></div>
+</template>

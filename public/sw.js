@@ -1,3 +1,7 @@
 const CACHE = 'double-chance-shell-v1'
-self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['/']))))
-self.addEventListener('fetch', event => event.respondWith(fetch(event.request).catch(() => caches.match(event.request))))
+self.addEventListener('install', (event) =>
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/'])))
+)
+self.addEventListener('fetch', (event) =>
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)))
+)

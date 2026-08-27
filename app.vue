@@ -1,5 +1,8 @@
 <script setup>
 const route = useRoute()
-const showSidebar = computed(() => route.path !== '/login' && !route.path.startsWith('/invite'))
+const showShell = computed(() => route.path !== '/login' && !route.path.startsWith('/invite'))
 </script>
-<template><AppSidebar v-if="showSidebar"/><NuxtPage/></template>
+<template>
+  <AppShell v-if="showShell"><NuxtPage /></AppShell>
+  <NuxtPage v-else />
+</template>

@@ -1,6 +1,7 @@
 node_modules
 .next
 .nuxt
+.output
 out
 .env.local
 .vercel

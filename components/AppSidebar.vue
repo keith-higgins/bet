@@ -1,1 +1,29 @@
-<template><aside class="sidebar shared-sidebar"><div class="brand"><div class="brand-mark"><span/><span/></div><div><strong>double<span>chance</span></strong><small>challenge tracker</small></div></div><div class="side-label">Workspace</div><nav class="main-nav"><NuxtLink class="nav-item" to="/">▦ <span>Overview</span></NuxtLink><NuxtLink class="nav-item" to="/admin">♙ <span>Manage players</span></NuxtLink><NuxtLink class="nav-item" to="/challenges">⚙ <span>Manage challenges</span></NuxtLink><NuxtLink class="nav-item" to="/account">♙ <span>Account</span></NuxtLink></nav><div class="side-spacer"/><div class="next-turn-card"><div class="eyebrow">✦ Next up</div><div class="turn-person"><div class="avatar yellow">FR</div><div><strong>Friend's turn</strong><small>Next round · €20 default stake</small></div></div></div></aside></template>
+<script setup>
+const route = useRoute()
+const manageActive = computed(() => route.path === '/admin' || route.path === '/challenges')
+</script>
+
+<template>
+  <aside class="sidebar shared-sidebar">
+    <NuxtLink class="brand" to="/" aria-label="Double Chance home">
+      <div class="brand-mark" aria-hidden="true"><span /><span /></div>
+      <div>
+        <strong>double<span>chance</span></strong
+        ><small>Premier League tracker</small>
+      </div>
+    </NuxtLink>
+    <div class="side-label">Workspace</div>
+    <nav class="main-nav" aria-label="Primary navigation">
+      <NuxtLink class="nav-item" to="/" exact-active-class="active"
+        ><span class="nav-icon">⌂</span><span>Overview</span></NuxtLink
+      >
+      <NuxtLink class="nav-item" to="/admin" :class="{ active: manageActive }"
+        ><span class="nav-icon">＋</span><span>Manage</span></NuxtLink
+      >
+      <NuxtLink class="nav-item" to="/account" exact-active-class="active"
+        ><span class="nav-icon">●</span><span>Account</span></NuxtLink
+      >
+    </nav>
+    <div class="side-spacer" />
+  </aside>
+</template>
