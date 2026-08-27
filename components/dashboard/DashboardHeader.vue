@@ -1,6 +1,7 @@
 <script setup>
 defineProps({
   hasBet: Boolean,
+  canEdit: Boolean,
   displayName: { type: String, default: 'there' },
   round: { type: Object, required: true }
 })
@@ -16,7 +17,7 @@ defineEmits(['add-bet', 'new-round'])
     </div>
     <div class="header-actions">
       <button class="outline-button" type="button" @click="$emit('new-round')">＋ New round</button
-      ><button class="primary-button" type="button" @click="$emit('add-bet')">
+      ><button v-if="canEdit" class="primary-button" type="button" @click="$emit('add-bet')">
         ＋ {{ hasBet ? 'Edit bet' : 'Add this week’s bet' }}
       </button>
     </div>

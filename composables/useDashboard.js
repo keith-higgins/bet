@@ -78,6 +78,10 @@ export function useDashboard() {
       ''
   )
   const currentBettorName = computed(() => round.value.bettor || 'No week yet')
+  const canManageCurrentBet = computed(
+    () =>
+      !currentUserId.value || !round.value.bettorId || currentUserId.value === round.value.bettorId
+  )
   const leaders = computed(() => {
     const allBets = allRounds.value.flatMap((item) => item.bets || [])
     const knownMembers = [
@@ -138,7 +142,8 @@ export function useDashboard() {
   function resetBet(value) {
     bet.value = {
       id: null,
-      bettorId: currentUserId.value || value.bettorId,
+      bettorId: value.bettorId || currentUserId.value,
+      bettor: value.bettor || currentUserName.value || 'Player',
       type: 'Accumulator',
       stake: value.stake,
       status: 'pending',
@@ -151,11 +156,9 @@ export function useDashboard() {
   function applyRound(value) {
     if (!value) return
     round.value = value
-    const ownBet =
-      value.bets?.find((item) => item.bettorId === currentUserId.value) ||
-      (!currentUserId.value ? value.bets?.[0] : null)
-    if (ownBet) {
-      bet.value = ownBet
+    const assignedBet = value.bets?.find((item) => item.bettorId === value.bettorId)
+    if (assignedBet) {
+      bet.value = assignedBet
       stake.value = bet.value.stake
       legs.value = bet.value.selections.map((item) => ({
         id: item.id,
@@ -351,6 +354,7 @@ export function useDashboard() {
     players: playersForWeek,
     assignableUsers,
     currentBettorName,
+    canManageCurrentBet,
     nextBettorId,
     leaders,
     money,

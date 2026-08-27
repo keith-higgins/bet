@@ -27,6 +27,7 @@ async function saveNewRound(details) {
     <div class="page-wrap">
       <DashboardHeader
         :has-bet="dashboard.bet.selections.length > 0"
+        :can-edit="dashboard.canManageCurrentBet"
         :display-name="dashboard.currentUserName"
         :round="dashboard.round"
         @add-bet="betFlowOpen = true"

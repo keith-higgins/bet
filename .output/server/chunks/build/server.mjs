@@ -579,7 +579,7 @@ const _routes = [
   {
     name: "index",
     path: "/",
-    component: () => import('./index-CfBz8LuW.mjs')
+    component: () => import('./index-BK8oSEKS.mjs')
   },
   {
     name: "login",
@@ -594,7 +594,7 @@ const _routes = [
   {
     name: "history",
     path: "/history",
-    component: () => import('./history-c1Mu9trz.mjs')
+    component: () => import('./history-BbQfN2hK.mjs')
   },
   {
     name: "challenges",

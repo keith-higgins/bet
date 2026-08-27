@@ -3,12 +3,21 @@ const props = defineProps({
   round: { type: Object, required: true },
   bet: { type: Object, required: true },
   legs: { type: Array, default: () => [] },
+  canEdit: Boolean,
   settled: Boolean,
   money: { type: Function, required: true }
 })
 defineEmits(['edit', 'settle'])
 const showSlip = ref(false)
 const roundSettled = computed(() => props.round.status === 'settled' || props.settled)
+function initials(name) {
+  return (name || 'Player')
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
 </script>
 
 <template>
@@ -23,7 +32,9 @@ const roundSettled = computed(() => props.round.status === 'settled' || props.se
           }}</span>
         </h2>
       </div>
-      <button class="text-button" type="button" @click="$emit('edit')">Edit bet →</button>
+      <button v-if="canEdit" class="text-button" type="button" @click="$emit('edit')">
+        Edit bet →
+      </button>
     </div>
     <article class="challenge-card">
       <div class="challenge-head">
@@ -41,9 +52,13 @@ const roundSettled = computed(() => props.round.status === 'settled' || props.se
       <div class="player-bets">
         <div class="player-bet">
           <div class="person-line">
-            <div class="avatar purple">ME</div>
+            <div class="avatar" :class="canEdit ? 'purple' : 'yellow'">
+              {{ canEdit ? 'ME' : initials(bet.bettor || round.bettor) }}
+            </div>
             <div>
-              <strong>Your bet</strong
+              <strong>{{
+                canEdit ? 'Your bet' : `${bet.bettor || round.bettor || 'Player'}'s bet`
+              }}</strong
               ><small>{{
                 bet.selections.length
                   ? `${bet.type} · ${bet.selections.length} selections`
@@ -62,21 +77,21 @@ const roundSettled = computed(() => props.round.status === 'settled' || props.se
           >
             {{ showSlip ? 'Hide slip ↑' : 'View slip ↗' }}</button
           ><button
-            v-else
+            v-else-if="canEdit"
             class="outline-button empty-bet-action"
             type="button"
             @click="$emit('edit')"
           >
             Add your selections
           </button>
+          <BetSlip
+            v-if="showSlip && bet.selections.length"
+            :legs="legs"
+            :settled="roundSettled || !canEdit"
+            @settle="$emit('settle')"
+          />
         </div>
       </div>
-      <BetSlip
-        v-if="showSlip && bet.selections.length"
-        :legs="legs"
-        :settled="roundSettled"
-        @settle="$emit('settle')"
-      />
       <div class="challenge-foot">
         <span>One accumulator per round</span
         ><span>{{ roundSettled ? 'Round settled' : 'Round in progress' }}</span>
