@@ -70,6 +70,14 @@ export function useDashboard() {
   const playersForWeek = computed(() =>
     round.value.members?.length ? round.value.members : players.value
   )
+  const trackedMatches = computed(() => {
+    const matches = round.value.bets.flatMap((currentBet) => currentBet.selections || [])
+    return [
+      ...new Map(
+        matches.filter((match) => match.matchId).map((match) => [match.matchId, match])
+      ).values()
+    ]
+  })
   const nextBettorId = computed(
     () =>
       assignableUsers.value.find((member) => member.userId !== round.value.bettorId)?.userId ||
@@ -354,6 +362,7 @@ export function useDashboard() {
     players: playersForWeek,
     assignableUsers,
     currentBettorName,
+    trackedMatches,
     canManageCurrentBet,
     nextBettorId,
     leaders,

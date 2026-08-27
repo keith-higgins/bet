@@ -579,7 +579,7 @@ const _routes = [
   {
     name: "index",
     path: "/",
-    component: () => import('./index-BBEuwqFC.mjs')
+    component: () => import('./index-7UtaZkHD.mjs')
   },
   {
     name: "login",
@@ -594,12 +594,12 @@ const _routes = [
   {
     name: "history",
     path: "/history",
-    component: () => import('./history-D9RaryR_.mjs')
+    component: () => import('./history-MlJyONFV.mjs')
   },
   {
     name: "challenges",
     path: "/challenges",
-    component: () => import('./challenges-LQzXFWX4.mjs')
+    component: () => import('./challenges-HVIzzpdu.mjs')
   },
   {
     name: "invite-token",

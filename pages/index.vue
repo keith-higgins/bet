@@ -39,6 +39,7 @@ async function saveNewRound(details) {
         :current-bettor="dashboard.currentBettorName"
         :money="dashboard.money"
       />
+      <LiveScoresCard :matches="dashboard.trackedMatches" />
       <div v-if="!dashboard.databaseEnabled" class="local-mode-banner">
         <span>Local preview mode</span
         ><small>Connect Supabase to sync the league across devices.</small>

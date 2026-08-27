@@ -75,6 +75,14 @@ function toUiWeek(row, users = []) {
       selections: (dbBet.bet_selections || []).map((selection) => ({
         id: selection.id,
         matchId: selection.matches?.provider_match_id || selection.match_id,
+        provider: selection.matches?.provider || '',
+        startsAt: selection.matches?.starts_at || null,
+        homeScore: selection.matches?.home_score,
+        awayScore: selection.matches?.away_score,
+        matchStatus: selection.matches?.status || 'scheduled',
+        minute: selection.matches?.minute || null,
+        home: selection.matches?.home_team || '',
+        away: selection.matches?.away_team || '',
         match: selection.matches
           ? `${selection.matches.home_team} v ${selection.matches.away_team}`
           : '',
@@ -157,7 +165,9 @@ export function useChallengeData() {
       await loadCurrentUser()
       const { data, error } = await client
         .from('weeks')
-        .select('*, bets(*, bet_selections(*, matches(provider_match_id, home_team, away_team)))')
+        .select(
+          '*, bets(*, bet_selections(*, matches(provider, provider_match_id, home_team, away_team, home_score, away_score, status, minute, starts_at)))'
+        )
         .order('week', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -187,7 +197,9 @@ export function useChallengeData() {
       await loadCurrentUser()
       const { data, error } = await client
         .from('weeks')
-        .select('*, bets(*, bet_selections(*, matches(provider_match_id, home_team, away_team)))')
+        .select(
+          '*, bets(*, bet_selections(*, matches(provider, provider_match_id, home_team, away_team, home_score, away_score, status, minute, starts_at)))'
+        )
         .order('week', { ascending: false })
       if (error) throw error
       const users = await loadAssignableUsers()
