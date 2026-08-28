@@ -78,27 +78,37 @@ a {
   margin-top: 2px;
 }
 .brand-mark {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   position: relative;
+  border-radius: 50%;
+  background: var(--yellow);
+  transform: rotate(-12deg);
+}
+.brand-mark::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid #111827;
+  border-radius: 50%;
+  opacity: 0.8;
 }
 .brand-mark span {
   position: absolute;
   display: block;
-  width: 15px;
-  height: 23px;
-  border: 3px solid var(--yellow);
-  border-radius: 9px 9px 3px 3px;
-  transform: rotate(36deg);
+  left: 13px;
+  width: 2px;
+  height: 7px;
+  border: 0;
+  border-radius: 2px;
+  background: #111827;
+  transform: rotate(12deg);
 }
 .brand-mark span:first-child {
-  top: 0;
-  left: 0;
+  top: 7px;
 }
 .brand-mark span:last-child {
-  right: 0;
-  bottom: 0;
-  border-color: #a28cf4;
+  bottom: 7px;
 }
 .side-label,
 .overline,

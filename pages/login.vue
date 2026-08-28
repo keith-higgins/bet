@@ -4,8 +4,8 @@
       <div class="brand auth-brand">
         <div class="brand-mark"><span /><span /></div>
         <div>
-          <strong>double<span>chance</span></strong
-          ><small>Premier League tracker</small>
+          <strong>the<span>weekly punt</span></strong
+          ><small>Premier League betting league</small>
         </div>
       </div>
       <p class="overline">PRIVATE CHALLENGE</p>

@@ -5,11 +5,11 @@ const manageActive = computed(() => route.path === '/admin' || route.path === '/
 
 <template>
   <aside class="sidebar shared-sidebar">
-    <NuxtLink class="brand" to="/" aria-label="Double Chance home">
+    <NuxtLink class="brand" to="/" aria-label="The Weekly Punt home">
       <div class="brand-mark" aria-hidden="true"><span /><span /></div>
       <div>
-        <strong>double<span>chance</span></strong
-        ><small>Premier League tracker</small>
+        <strong>the<span>weekly punt</span></strong
+        ><small>Premier League betting league</small>
       </div>
     </NuxtLink>
     <div class="side-label">Workspace</div>

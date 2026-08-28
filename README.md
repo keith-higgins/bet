@@ -1,4 +1,4 @@
-# Double Chance
+# The Weekly Punt
 
 Mobile-first Premier League betting tracker.
 

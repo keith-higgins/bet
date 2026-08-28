@@ -1,10 +1,10 @@
 {
-  "name": "Double Chance",
-  "short_name": "Double Chance",
-  "description": "Weekly Premier League betting tracker",
+  "name": "The Weekly Punt",
+  "short_name": "Weekly Punt",
+  "description": "A friendly weekly Premier League betting league",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f8fa",
+  "background_color": "#f1f3f8",
   "theme_color": "#111827",
   "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
 }

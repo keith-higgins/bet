@@ -1,4 +1,4 @@
-const CACHE = 'double-chance-shell-v1'
+const CACHE = 'weekly-punt-shell-v1'
 self.addEventListener('install', (event) =>
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/'])))
 )

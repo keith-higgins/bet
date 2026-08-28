@@ -5,7 +5,7 @@
       <h1>{{ statusTitle }}</h1>
       <p>{{ statusMessage }}</p>
       <div v-if="!signedIn" class="invite-preview">
-        <strong>Double Chance</strong><small>Weekly Premier League betting game</small>
+        <strong>The Weekly Punt</strong><small>Weekly Premier League betting league</small>
       </div>
       <NuxtLink v-if="signedIn" class="primary-button full-width" to="/">Open dashboard →</NuxtLink
       ><NuxtLink v-else class="primary-button full-width" to="/login"
