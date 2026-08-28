@@ -63,7 +63,8 @@ async function invitePlayer() {
           placeholder="At least 6 characters"
           required /></label
       ><button class="primary-button full-width" :disabled="loading">
-        {{ loading ? 'Creating player…' : 'Add player →' }}
+        <LoadingSpinner v-if="loading" label="Creating player…" inline small />
+        <template v-else>Add player →</template>
       </button>
       <p v-if="message" class="auth-success">{{ message }}</p>
       <p v-if="error" class="auth-error">{{ error }}</p>

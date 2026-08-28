@@ -32,7 +32,7 @@ export function useDashboard() {
   })
   const legs = ref([{ match: '', market: 'Match result', pick: '', odds: 1.5, status: 'pending' }])
   const stake = ref(20)
-  const loading = ref(false)
+  const loading = ref(databaseEnabled.value)
   const toast = ref('')
   let toastTimer
 
@@ -188,12 +188,17 @@ export function useDashboard() {
 
   async function loadDashboard() {
     if (!databaseEnabled.value) return
-    const rounds = await loadRounds()
-    assignableUsers.value = await loadAssignableUsers()
-    const value = rounds[0]
-    if (value) {
-      applyRound(value)
-      previousRounds.value = rounds.slice(1)
+    loading.value = true
+    try {
+      const rounds = await loadRounds()
+      assignableUsers.value = await loadAssignableUsers()
+      const value = rounds[0]
+      if (value) {
+        applyRound(value)
+        previousRounds.value = rounds.slice(1)
+      }
+    } finally {
+      loading.value = false
     }
   }
 

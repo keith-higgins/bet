@@ -47,7 +47,8 @@ watch(
         <p class="overline">MATCH CENTRE</p>
         <h2>Live scores</h2>
       </div>
-      <span class="live-refresh">{{ loading ? 'Updating…' : 'Refreshes every 2 mins' }}</span>
+      <LoadingSpinner v-if="loading" label="Updating…" inline small />
+      <span v-else class="live-refresh">Refreshes every 2 mins</span>
     </div>
     <div class="live-score-list">
       <article

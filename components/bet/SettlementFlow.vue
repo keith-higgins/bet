@@ -69,7 +69,8 @@ function save() {
       <footer class="flow-footer">
         <button class="text-button back-button" type="button" @click="$emit('close')">Cancel</button
         ><button class="primary-button" type="button" :disabled="loading" @click="save">
-          {{ loading ? 'Saving…' : 'Save settlement →' }}
+          <LoadingSpinner v-if="loading" label="Saving…" inline small />
+          <template v-else>Save settlement →</template>
         </button>
       </footer>
     </section>

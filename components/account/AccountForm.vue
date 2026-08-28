@@ -78,7 +78,8 @@ async function logout() {
       <p v-if="message" class="auth-success">{{ message }}</p>
       <p v-if="error" class="auth-error">{{ error }}</p>
       <button class="primary-button full-width" :disabled="loading">
-        {{ loading ? 'Saving…' : 'Save account →' }}
+        <LoadingSpinner v-if="loading" label="Saving…" inline small />
+        <template v-else>Save account →</template>
       </button>
     </form>
     <button class="logout-button" type="button" @click="logout">Log out</button>

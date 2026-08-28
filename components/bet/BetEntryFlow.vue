@@ -145,7 +145,8 @@ function save() {
         ><span v-else /><button v-if="step < 4" class="primary-button" type="button" @click="next">
           Continue →</button
         ><button v-else class="primary-button" type="button" :disabled="loading" @click="save">
-          {{ loading ? 'Saving…' : 'Save bet →' }}
+          <LoadingSpinner v-if="loading" label="Saving…" inline small />
+          <template v-else>Save bet →</template>
         </button>
       </footer>
     </section>

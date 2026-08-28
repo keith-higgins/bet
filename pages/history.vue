@@ -14,7 +14,7 @@ onMounted(async () => {
       <h1>History</h1>
       <p class="subheading">Every round, result, and return in one place.</p>
     </section>
-    <div v-if="loading" class="loading-state">Loading Premier League history…</div>
+    <LoadingSpinner v-if="loading" label="Loading Premier League history…" />
     <div v-else-if="lastError" class="error-panel" role="alert">{{ lastError }}</div>
     <HistoryList v-else :rounds="rounds" :money="money" />
   </div>

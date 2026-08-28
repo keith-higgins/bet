@@ -105,7 +105,9 @@ function pickOptions(leg) {
           placeholder="Match, e.g. Arsenal v Chelsea"
           @input="handleMatchInput(index, $event.target.value)"
         />
-        <span v-if="searching === index" class="fixture-search-status">Searching fixtures…</span>
+        <span v-if="searching === index" class="fixture-search-status"
+          ><LoadingSpinner label="Searching fixtures…" inline small
+        /></span>
         <div v-if="results[index]?.length" class="fixture-results">
           <button
             v-for="fixture in results[index]"

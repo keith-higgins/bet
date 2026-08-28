@@ -137,7 +137,8 @@ onMounted(refresh)
           @settle-bet="startSettlement(item, $event)"
           @remove="remove(item)"
         />
-        <div v-if="!rounds.length" class="empty-state">
+        <LoadingSpinner v-if="loading && !rounds.length" label="Loading weeks…" />
+        <div v-else-if="!rounds.length" class="empty-state">
           <strong>No weeks yet</strong><span>Create the first Premier League week.</span>
         </div>
       </div>

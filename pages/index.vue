@@ -37,36 +37,40 @@ async function saveNewRound(details) {
         :total-profit-loss="dashboard.totalProfitLoss"
         :best-week-profit="dashboard.bestWeekProfit"
         :current-bettor="dashboard.currentBettorName"
+        :loading="dashboard.loading && !dashboard.round.id"
         :money="dashboard.money"
       />
-      <LiveScoresCard :matches="dashboard.trackedMatches" />
-      <div v-if="!dashboard.databaseEnabled" class="local-mode-banner">
-        <span>Local preview mode</span
-        ><small>Connect Supabase to sync the league across devices.</small>
-      </div>
-      <section class="content-grid">
-        <div class="left-column">
-          <CurrentRoundCard
-            :round="dashboard.round"
-            :bet="dashboard.bet"
-            :legs="dashboard.legs"
-            :settled="dashboard.settled"
-            :money="dashboard.money"
-            @edit="betFlowOpen = true"
-            @settle="settlementOpen = true"
-          />
-          <RecentWeeks
-            :rounds="dashboard.previousRounds"
-            :current-round="dashboard.round"
-            :current-bet="dashboard.bet"
-            :settled="dashboard.settled"
-            :money="dashboard.money"
-          />
+      <LoadingSpinner v-if="dashboard.loading && !dashboard.round.id" label="Loading dashboard…" />
+      <template v-else>
+        <LiveScoresCard :matches="dashboard.trackedMatches" />
+        <div v-if="!dashboard.databaseEnabled" class="local-mode-banner">
+          <span>Local preview mode</span
+          ><small>Connect Supabase to sync the league across devices.</small>
         </div>
-        <div class="right-column">
-          <LeaderboardCard :leaders="dashboard.leaders" :money="dashboard.money" />
-        </div>
-      </section>
+        <section class="content-grid">
+          <div class="left-column">
+            <CurrentRoundCard
+              :round="dashboard.round"
+              :bet="dashboard.bet"
+              :legs="dashboard.legs"
+              :settled="dashboard.settled"
+              :money="dashboard.money"
+              @edit="betFlowOpen = true"
+              @settle="settlementOpen = true"
+            />
+            <RecentWeeks
+              :rounds="dashboard.previousRounds"
+              :current-round="dashboard.round"
+              :current-bet="dashboard.bet"
+              :settled="dashboard.settled"
+              :money="dashboard.money"
+            />
+          </div>
+          <div class="right-column">
+            <LeaderboardCard :leaders="dashboard.leaders" :money="dashboard.money" />
+          </div>
+        </section>
+      </template>
     </div>
 
     <BetEntryFlow

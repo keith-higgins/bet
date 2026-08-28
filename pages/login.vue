@@ -32,7 +32,8 @@
             minlength="6"
             required /></label
         ><button class="primary-button full-width" :disabled="loading">
-          {{ loading ? 'Working…' : mode === 'login' ? 'Log in →' : 'Create account →' }}
+          <LoadingSpinner v-if="loading" label="Working…" inline small />
+          <template v-else>{{ mode === 'login' ? 'Log in →' : 'Create account →' }}</template>
         </button>
         <p v-if="message" class="auth-success">{{ message }}</p>
         <p v-if="error" class="auth-error">{{ error }}</p>
