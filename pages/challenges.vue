@@ -8,6 +8,7 @@ const {
   createInitialWeek,
   loadAssignableUsers,
   saveBetToDatabase,
+  settleBetInDatabase,
   loading,
   lastError
 } = useChallengeData()
@@ -15,6 +16,7 @@ const rounds = ref([])
 const assignableUsers = ref([])
 const creating = ref(false)
 const editingBet = ref(null)
+const settlingBet = ref(null)
 const notice = ref('')
 const money = (value) => `€ ${Number(value || 0).toFixed(2)}`
 const refresh = async () => {
@@ -44,6 +46,31 @@ async function saveBet(betDetails) {
     editingBet.value = null
     await refresh()
   }
+}
+function startSettlement(item, bet) {
+  settlingBet.value = { item, bet }
+}
+async function saveSettlement(statuses) {
+  if (!settlingBet.value) return
+  const { item, bet } = settlingBet.value
+  const combinedOdds = bet.selections.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)
+  const result = await settleBetInDatabase({
+    betId: bet.id,
+    selectionStatuses: statuses,
+    stake: bet.stake,
+    combinedOdds
+  })
+  if (!result) {
+    notice.value = lastError.value
+    return
+  }
+  const weekUpdateFailed =
+    result.status !== 'pending' && !(await updateWeek(item.id, { status: 'settled' }))
+  settlingBet.value = null
+  notice.value = weekUpdateFailed
+    ? `Bet settled as ${result.status}, but the week status could not be saved.`
+    : `Bet settled as ${result.status}.`
+  await refresh()
 }
 async function remove(item) {
   if (!confirm(`Delete Week ${item.week} and all bets?`)) return
@@ -107,6 +134,7 @@ onMounted(refresh)
           :users="assignableUsers"
           @save="(changes) => save(item, changes)"
           @edit-bet="editingBet = $event"
+          @settle-bet="startSettlement(item, $event)"
           @remove="remove(item)"
         />
         <div v-if="!rounds.length" class="empty-state">
@@ -134,6 +162,13 @@ onMounted(refresh)
       :money="money"
       @close="editingBet = null"
       @save="saveBet"
+    />
+    <SettlementFlow
+      :open="Boolean(settlingBet)"
+      :legs="settlingBet?.bet.selections || []"
+      :loading="loading"
+      @close="settlingBet = null"
+      @save="saveSettlement"
     />
   </div>
 </template>

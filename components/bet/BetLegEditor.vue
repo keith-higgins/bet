@@ -1,4 +1,6 @@
 <script setup>
+import { BET_MARKETS, getMarketPickOptions } from '~/lib/betting'
+
 const props = defineProps({ legs: { type: Array, default: () => [] } })
 const emit = defineEmits(['update:legs', 'add', 'remove'])
 const results = ref({})
@@ -15,7 +17,17 @@ function updateMatch(index, value) {
   emit(
     'update:legs',
     props.legs.map((leg, itemIndex) =>
-      itemIndex === index ? { ...leg, match: value, matchId: '', provider: '' } : leg
+      itemIndex === index
+        ? { ...leg, match: value, matchId: '', provider: '', home: '', away: '', pick: '' }
+        : leg
+    )
+  )
+}
+function updateMarket(index, value) {
+  emit(
+    'update:legs',
+    props.legs.map((leg, itemIndex) =>
+      itemIndex === index ? { ...leg, market: value, pick: '' } : leg
     )
   )
 }
@@ -50,7 +62,10 @@ function selectFixture(index, fixture) {
             matchId: fixture.id,
             provider: fixture.provider,
             competition: fixture.competition,
-            startsAt: fixture.startsAt
+            startsAt: fixture.startsAt,
+            home: fixture.home,
+            away: fixture.away,
+            pick: ''
           }
         : leg
     )
@@ -66,6 +81,9 @@ function fixtureDate(value) {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+function pickOptions(leg) {
+  return getMarketPickOptions(leg)
 }
 </script>
 
@@ -105,16 +123,27 @@ function fixtureDate(value) {
           ><select
             :id="`market-${index}`"
             :value="leg.market"
-            @change="update(index, 'market', $event.target.value)"
+            @change="updateMarket(index, $event.target.value)"
           >
-            <option>Match result</option>
-            <option>Both teams to score</option>
-            <option>Total goals</option></select
+            <option v-for="market in BET_MARKETS" :key="market.databaseValue" :value="market.label">
+              {{ market.label }}
+            </option></select
           ><label class="sr-only" :for="`pick-${index}`">Pick {{ index + 1 }}</label
-          ><input
+          ><select
+            v-if="pickOptions(leg).length"
             :id="`pick-${index}`"
             :value="leg.pick"
-            placeholder="Pick"
+            @change="update(index, 'pick', $event.target.value)"
+          >
+            <option value="">Choose pick</option>
+            <option v-for="pick in pickOptions(leg)" :key="pick" :value="pick">
+              {{ pick }}
+            </option></select
+          ><input
+            v-else
+            :id="`pick-${index}`"
+            :value="leg.pick"
+            :placeholder="leg.market === 'Correct score' ? 'e.g. 2-1' : 'Select match first'"
             @input="update(index, 'pick', $event.target.value)"
           /><label class="sr-only" :for="`odds-${index}`">Fractional odds {{ index + 1 }}</label
           ><input

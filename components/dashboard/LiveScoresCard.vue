@@ -2,12 +2,23 @@
 const props = defineProps({ matches: { type: Array, default: () => [] } })
 const { scores, loading, error, start, stop } = useLiveScores()
 const trackedMatches = computed(() =>
-  props.matches.map((match) => ({ ...match, ...(scores.value[match.matchId] || {}) }))
+  props.matches.map((match) => ({
+    ...match,
+    ...(scores.value[match.matchId] || {}),
+    betStatus: match.status || 'pending',
+    matchStatus: scores.value[match.matchId]?.status || match.matchStatus || 'scheduled'
+  }))
 )
-function status(match) {
-  if (match.status?.toLowerCase().includes('finished')) return 'Finished'
-  if (match.status?.toLowerCase().includes('progress')) return match.minute || 'Live'
-  return match.status || 'Upcoming'
+function fixtureStatus(match) {
+  const value = String(match.matchStatus || '').toLowerCase()
+  if (value.includes('finished')) return 'Finished'
+  if (value.includes('progress') || value.includes('live')) return match.minute || 'Live'
+  return value && value !== 'scheduled' ? match.matchStatus : 'Upcoming'
+}
+function betStatusLabel(value) {
+  if (value === 'won') return 'Won'
+  if (value === 'lost') return 'Lost'
+  return 'Pending'
 }
 function kickoff(match) {
   return match.startsAt
@@ -39,14 +50,27 @@ watch(
       <span class="live-refresh">{{ loading ? 'Updating…' : 'Refreshes every 2 mins' }}</span>
     </div>
     <div class="live-score-list">
-      <article v-for="match in trackedMatches" :key="match.matchId" class="live-score-row">
-        <div>
-          <strong>{{ match.home }} v {{ match.away }}</strong>
-          <small>{{
-            match.startsAt && new Date(match.startsAt) <= new Date()
-              ? status(match)
-              : `Starts ${kickoff(match)}`
-          }}</small>
+      <article
+        v-for="match in trackedMatches"
+        :key="match.matchId"
+        class="live-score-row"
+        :class="match.betStatus"
+      >
+        <div class="live-match-main">
+          <div class="live-match-heading">
+            <strong>{{ match.home }} v {{ match.away }}</strong>
+            <span class="live-bet-status" :class="match.betStatus">
+              {{ betStatusLabel(match.betStatus) }}
+            </span>
+          </div>
+          <div class="live-match-meta">
+            <small>{{
+              match.startsAt && new Date(match.startsAt) <= new Date()
+                ? fixtureStatus(match)
+                : `Starts ${kickoff(match)}`
+            }}</small>
+            <small v-if="match.pick" class="live-pick">Pick: {{ match.pick }}</small>
+          </div>
         </div>
         <strong v-if="match.homeScore != null && match.awayScore != null" class="live-score">
           {{ match.homeScore }} - {{ match.awayScore }}
@@ -86,19 +110,78 @@ watch(
   border-top: 1px solid var(--line);
 }
 
-.live-score-row strong,
-.live-score-row small {
-  display: block;
+.live-match-main {
+  min-width: 0;
+  flex: 1;
 }
 
-.live-score-row strong {
+.live-match-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.live-match-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
 }
 
-.live-score-row small {
+.live-match-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin-top: 4px;
+}
+
+.live-match-meta small {
+  display: block;
   color: var(--muted);
   font-size: 10px;
+}
+
+.live-pick {
+  color: #6651ca !important;
+  font-weight: 500;
+}
+
+.live-bet-status {
+  flex: none;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: #fff6d8;
+  color: #bd8b08;
+  font: 9px 'DM Mono';
+}
+
+.live-score-row.won {
+  border-left: 3px solid #bde8d7;
+  background: #fbfffd;
+  padding-left: 8px;
+}
+
+.live-score-row.lost {
+  border-left: 3px solid #f0c1c4;
+  background: #fffafa;
+  padding-left: 8px;
+}
+
+.live-score-row.pending {
+  border-left: 3px solid #f4dfa0;
+  padding-left: 8px;
+}
+
+.live-bet-status.won {
+  background: #e7f8f2;
+  color: #129c6e;
+}
+
+.live-bet-status.lost {
+  background: #fff0ef;
+  color: #e46870;
 }
 
 .live-score {

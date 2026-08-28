@@ -1,23 +1,12 @@
 import { useSupabaseClient } from '~/lib/supabase'
+import { MARKET_DATABASE_VALUES, MARKET_UI_VALUES } from '~/lib/betting'
 
 function toDatabaseMarket(market) {
-  return (
-    {
-      'Match result': 'match_result',
-      'Both teams to score': 'both_teams_score',
-      'Total goals': 'total_goals'
-    }[market] || market
-  )
+  return MARKET_DATABASE_VALUES[market] || market
 }
 
 function toUiMarket(market) {
-  return (
-    {
-      match_result: 'Match result',
-      both_teams_score: 'Both teams to score',
-      total_goals: 'Total goals'
-    }[market] || market
-  )
+  return MARKET_UI_VALUES[market] || market
 }
 
 function normalizeUser(user) {
@@ -249,8 +238,8 @@ export function useChallengeData() {
         return {
           provider: leg.provider || source?.provider || 'manual',
           provider_match_id: leg.matchId || source?.id || manualId,
-          home_team: source?.home || home || label,
-          away_team: source?.away || away || 'Selection',
+          home_team: source?.home || leg.home || home || label,
+          away_team: source?.away || leg.away || away || 'Selection',
           home_score: source?.homeScore ?? null,
           away_score: source?.awayScore ?? null,
           status: source?.status || 'scheduled',

@@ -460,6 +460,11 @@ a {
   margin: 7px 0 0;
   font: 600 17px 'Space Grotesk';
 }
+.round-values {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
 .stake-pill {
   border-left: 1px solid var(--line);
   padding-left: 21px;
@@ -475,6 +480,9 @@ a {
   display: block;
   margin-top: 5px;
   font: 600 16px 'Space Grotesk';
+}
+.potential-return-pill strong {
+  color: var(--purple);
 }
 .player-bets {
   display: grid;
@@ -527,6 +535,15 @@ a {
   color: var(--purple);
   font-size: 10px;
   padding: 0 0 0 38px;
+}
+.bet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-left: 38px;
+}
+.bet-actions .bet-link {
+  padding-left: 0;
 }
 .vs-divider {
   display: grid;
@@ -1637,6 +1654,10 @@ a {
   color: var(--muted);
   font-size: 11px;
 }
+.managed-bets {
+  display: grid;
+  gap: 10px;
+}
 .managed-actions {
   display: flex;
   gap: 7px;
@@ -1911,6 +1932,11 @@ a {
   color: var(--muted);
   font-size: 10px;
 }
+.managed-bet-actions {
+  display: flex;
+  gap: 7px;
+  margin-top: 8px;
+}
 .logout-button {
   width: 100%;
   margin-top: 10px;
@@ -2064,6 +2090,11 @@ body {
     text-align: center;
     min-height: 44px;
   }
+  .managed-bet-actions > * {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
   .account-page {
     padding: 18px 12px 70px;
   }
@@ -2195,22 +2226,6 @@ body {
 }
 .local-mode-banner small {
   color: #958bbd;
-}
-.round-deadline {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 21px;
-  background: #fffaf0;
-  color: #9b791c;
-  border-bottom: 1px solid #f4ead0;
-  font-size: 11px;
-}
-.deadline-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--yellow);
 }
 .empty-bet-action {
   margin: 16px 0 0;
@@ -2739,9 +2754,6 @@ select:focus-visible {
   }
   .stake-pill {
     padding-left: 12px;
-  }
-  .round-deadline {
-    padding: 10px 14px;
   }
   .player-bets {
     padding: 16px 14px;

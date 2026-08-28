@@ -4,7 +4,7 @@ const props = defineProps({
   money: { type: Function, required: true },
   users: { type: Array, default: () => [] }
 })
-const emit = defineEmits(['save', 'remove', 'edit-bet'])
+const emit = defineEmits(['save', 'remove', 'edit-bet', 'settle-bet'])
 const editing = ref(false)
 const form = ref({ title: '', stake: 20, deadline: '', bettorId: '' })
 
@@ -34,27 +34,27 @@ function save() {
         <span class="week-kicker">WEEK {{ item.week }} · {{ item.status }}</span>
         <h2>{{ item.title }}</h2>
         <small>{{ item.dates }} · {{ money(item.stake) }} stake · {{ item.bettor }}</small>
-        <div v-if="item.bets[0]" class="managed-bet">
-          <strong>{{ item.bets[0].type }}</strong
-          ><span>{{ item.bets[0].selections.length }} legs · {{ item.bets[0].status }}</span
-          ><small
-            >{{ money(item.bets[0].stake) }} stake ·
-            {{
-              item.bets[0].actualReturn == null ? 'No return yet' : money(item.bets[0].actualReturn)
-            }}</small
-          >
+        <div v-if="item.bets?.length" class="managed-bets">
+          <div v-for="bet in item.bets" :key="bet.id" class="managed-bet">
+            <strong>{{ bet.bettor }} · {{ bet.type }}</strong
+            ><span>{{ bet.selections.length }} legs · {{ bet.status }}</span
+            ><small
+              >{{ money(bet.stake) }} stake ·
+              {{ bet.actualReturn == null ? 'No return yet' : money(bet.actualReturn) }}</small
+            >
+            <div class="managed-bet-actions">
+              <button class="outline-button" type="button" @click="emit('edit-bet', bet)">
+                Edit bet</button
+              ><button class="outline-button" type="button" @click="emit('settle-bet', bet)">
+                Settle bet
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="managed-actions">
         <NuxtLink class="outline-button" to="/">Open overview</NuxtLink
         ><button class="outline-button" type="button" @click="startEditing">Edit week</button
-        ><button
-          v-if="item.bets[0]"
-          class="outline-button"
-          type="button"
-          @click="emit('edit-bet', item.bets[0])"
-        >
-          Edit bet</button
         ><button class="outline-button danger-button" type="button" @click="$emit('remove')">
           Delete
         </button>

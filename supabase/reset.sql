@@ -54,7 +54,18 @@ create table public.bet_selections (
   id uuid primary key default gen_random_uuid(),
   bet_id uuid references public.bets on delete cascade not null,
   match_id uuid references public.matches not null,
-  market text not null check (market in ('match_result', 'both_teams_score', 'total_goals')),
+  market text not null check (
+    market in (
+      'match_result',
+      'double_chance',
+      'both_teams_score',
+      'total_goals',
+      'first_team_to_score',
+      'draw_no_bet',
+      'win_to_nil',
+      'correct_score'
+    )
+  ),
   pick text not null,
   odds numeric(8,2) not null,
   status text not null default 'pending'

@@ -10,6 +10,11 @@ const props = defineProps({
 defineEmits(['edit', 'settle'])
 const showSlip = ref(false)
 const roundSettled = computed(() => props.round.status === 'settled' || props.settled)
+const potentialReturn = computed(() => {
+  if (!props.bet.selections?.length) return null
+  const combinedOdds = props.legs.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)
+  return Number(props.bet.stake || props.round.stake) * combinedOdds
+})
 function initials(name) {
   return (name || 'Player')
     .split(/\s+/)
@@ -42,12 +47,14 @@ function initials(name) {
           <span class="week-kicker">Deadline {{ round.dates }}</span>
           <h3>{{ round.title }}</h3>
         </div>
-        <div class="stake-pill">
-          <span>Stake</span><strong>{{ money(bet.stake || round.stake) }}</strong>
+        <div class="round-values">
+          <div class="stake-pill">
+            <span>Stake</span><strong>{{ money(bet.stake || round.stake) }}</strong>
+          </div>
+          <div v-if="potentialReturn !== null" class="stake-pill potential-return-pill">
+            <span>Potential return</span><strong>{{ money(potentialReturn) }}</strong>
+          </div>
         </div>
-      </div>
-      <div class="round-deadline">
-        <span class="deadline-dot" />Submit your bet before the deadline
       </div>
       <div class="player-bets">
         <div class="player-bet">
@@ -69,14 +76,15 @@ function initials(name) {
               bet.selections.length ? bet.status : 'Waiting'
             }}</span>
           </div>
+          <div v-if="bet.selections.length" class="bet-actions">
+            <button class="bet-link" type="button" @click="showSlip = !showSlip">
+              {{ showSlip ? 'Hide slip ↑' : 'View slip ↗' }}
+            </button>
+            <button v-if="canEdit" class="bet-link" type="button" @click="$emit('settle')">
+              {{ roundSettled ? 'Override settlement ↗' : 'Settle bet ↗' }}
+            </button>
+          </div>
           <button
-            v-if="bet.selections.length"
-            class="bet-link"
-            type="button"
-            @click="showSlip = !showSlip"
-          >
-            {{ showSlip ? 'Hide slip ↑' : 'View slip ↗' }}</button
-          ><button
             v-else-if="canEdit"
             class="outline-button empty-bet-action"
             type="button"
@@ -84,12 +92,7 @@ function initials(name) {
           >
             Add your selections
           </button>
-          <BetSlip
-            v-if="showSlip && bet.selections.length"
-            :legs="legs"
-            :settled="roundSettled || !canEdit"
-            @settle="$emit('settle')"
-          />
+          <BetSlip v-if="showSlip && bet.selections.length" :legs="legs" />
         </div>
       </div>
       <div class="challenge-foot">

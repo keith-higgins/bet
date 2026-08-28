@@ -1,8 +1,7 @@
 <script setup>
 import { decimalToFractional } from '~/lib/odds'
 
-defineProps({ legs: { type: Array, default: () => [] }, settled: Boolean })
-defineEmits(['settle'])
+defineProps({ legs: { type: Array, default: () => [] } })
 </script>
 
 <template>
@@ -14,14 +13,6 @@ defineEmits(['settle'])
           Accumulator <span>{{ legs.length }} legs</span>
         </h3>
       </div>
-      <button
-        v-if="!settled"
-        class="primary-button compact-button"
-        type="button"
-        @click="$emit('settle')"
-      >
-        Settle bet
-      </button>
     </div>
     <div class="slip-legs">
       <div v-for="(leg, index) in legs" :key="index" class="slip-leg">

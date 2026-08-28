@@ -20,7 +20,7 @@ The frontend uses Nuxt 3, Vue 3, and JavaScript.
 3. Copy `.env.example` to `.env.local` and add the project URL and anon key.
 4. Set `FOOTBALL_PROVIDER` and `FOOTBALL_PROVIDER_API_KEY` when a provider is selected.
 
-The provider boundary is in [`lib/football/provider.js`](./lib/football/provider.js); polling can be called by a scheduled job through `POST /api/sync`.
+The provider boundary is in [`lib/football/provider.js`](./lib/football/provider.js). A scheduled job can call `POST /api/sync` (optionally with an `ids` query parameter) to persist scores and automatically settle supported markets. Set `SYNC_SECRET` and send it as a bearer token when protecting the sync endpoint.
 
 Once the Supabase variables are present, the dashboard loads the latest round and saves bet legs to the database. Without them it remains local to the current session.
 
