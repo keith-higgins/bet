@@ -59,6 +59,9 @@ async function saveNewRound(details) {
               @edit="betFlowOpen = true"
               @settle="settlementOpen = true"
             />
+          </div>
+          <div class="right-column dashboard-sidebar">
+            <LeaderboardCard :leaders="dashboard.leaders" :money="dashboard.money" />
             <RecentWeeks
               :rounds="dashboard.previousRounds"
               :current-round="dashboard.round"
@@ -66,9 +69,6 @@ async function saveNewRound(details) {
               :settled="dashboard.settled"
               :money="dashboard.money"
             />
-          </div>
-          <div class="right-column">
-            <LeaderboardCard :leaders="dashboard.leaders" :money="dashboard.money" />
           </div>
         </section>
       </template>

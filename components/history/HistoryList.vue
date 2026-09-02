@@ -93,6 +93,10 @@ function scoreLabel(leg) {
   return String(leg.homeScore) + ' - ' + String(leg.awayScore)
 }
 
+function signedMoney(value) {
+  return (value > 0 ? '+' : '') + props.money(value)
+}
+
 function returnSummary(bet) {
   if (bet.actualReturn == null) return 'Return pending'
   const result = profit(bet)
@@ -130,9 +134,12 @@ function resetFilters() {
         <strong>{{ money(totalReturned) }}</strong>
         <small>Including winning returns</small>
       </article>
-      <article class="history-summary-card" :class="netResult >= 0 ? 'is-positive' : 'is-negative'">
+      <article
+        class="history-summary-card"
+        :class="{ 'is-positive': netResult > 0, 'is-negative': netResult < 0 }"
+      >
         <span class="history-summary-label">Net result</span>
-        <strong>{{ netResult >= 0 ? '+' : '' }}{{ money(netResult) }}</strong>
+        <strong>{{ signedMoney(netResult) }}</strong>
         <small>Returns minus stakes</small>
       </article>
     </div>
@@ -199,8 +206,14 @@ function resetFilters() {
           >
             {{ summaryStatus(filteredBets(item)) }}
           </span>
-          <span class="history-card-result">
-            <b>{{ money(weekProfit(item)) }}</b>
+          <span
+            class="history-card-result"
+            :class="{
+              'result-positive': weekProfit(item) > 0,
+              'result-negative': weekProfit(item) < 0
+            }"
+          >
+            <b>{{ signedMoney(weekProfit(item)) }}</b>
             <small>Net result</small>
           </span>
           <span class="history-chevron" aria-hidden="true">{{
@@ -233,7 +246,10 @@ function resetFilters() {
                     <strong>{{ leg.match || 'Unlinked match' }}</strong>
                     <small>{{ leg.market }} · {{ leg.pick }} · {{ scoreLabel(leg) }}</small>
                   </span>
-                  <span class="status-pill" :class="'status-' + (leg.status || 'pending')">
+                  <span
+                    class="history-leg-status"
+                    :class="'status-text-' + (leg.status || 'pending')"
+                  >
                     {{ leg.status || 'pending' }}
                   </span>
                 </div>
@@ -337,6 +353,14 @@ function resetFilters() {
   font-size: 0.68rem;
 }
 
+.history-card-result.result-positive b {
+  color: var(--green);
+}
+
+.history-card-result.result-negative b {
+  color: var(--red);
+}
+
 .status-pill {
   display: inline-flex;
   width: max-content;
@@ -418,14 +442,17 @@ function resetFilters() {
 
 .history-bets {
   display: grid;
-  gap: 14px;
+  gap: 0;
 }
 
 .history-bet {
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fbfcfd;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-bet:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
 }
 
 .history-bet-header {
@@ -474,11 +501,35 @@ function resetFilters() {
   min-height: 22px;
 }
 
+.history-leg > .history-leg-status {
+  display: block;
+  width: auto;
+  height: auto;
+  background: none;
+  color: var(--muted);
+  font: 500 0.63rem 'DM Mono';
+  text-transform: capitalize;
+}
+
+.history-leg-status.status-text-won {
+  color: var(--green);
+}
+
+.history-leg-status.status-text-lost {
+  color: var(--red);
+}
+
 .history-leg-main {
   display: grid;
+  width: auto;
+  height: auto;
   flex: 1;
   gap: 3px;
   min-width: 0;
+  place-items: initial;
+  border-radius: 0;
+  background: none;
+  color: inherit;
 }
 
 .history-leg-main strong {
@@ -489,6 +540,11 @@ function resetFilters() {
 
 .history-leg-main small {
   color: var(--muted);
+}
+
+.history-details {
+  padding-top: 12px;
+  background: #f4f6f8;
 }
 
 .history-filter-empty {
@@ -541,7 +597,7 @@ function resetFilters() {
 
 @media (max-width: 520px) {
   .history-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .history-toolbar {
@@ -560,6 +616,16 @@ function resetFilters() {
 
   .history-bet-header {
     display: grid;
+  }
+}
+
+@media (max-width: 380px) {
+  .history-summary-card {
+    padding: 13px 10px;
+  }
+
+  .history-summary-card strong {
+    font-size: 1.08rem;
   }
 }
 </style>
