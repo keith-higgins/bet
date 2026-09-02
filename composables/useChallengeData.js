@@ -426,7 +426,12 @@ export function useChallengeData() {
 
   async function updateWeek(weekId, changes) {
     if (!client || !weekId) return false
-    const { error } = await client.from('weeks').update(changes).eq('id', weekId)
+    const databaseChanges = { ...changes }
+    if ('bettorId' in databaseChanges) {
+      databaseChanges.bettor_id = databaseChanges.bettorId
+      delete databaseChanges.bettorId
+    }
+    const { error } = await client.from('weeks').update(databaseChanges).eq('id', weekId)
     if (error) {
       lastError.value = error.message
       return false
