@@ -6,3 +6,5 @@ out
 .env.local
 .vercel
 coverage
+privatekey.txt
+publickey.txt

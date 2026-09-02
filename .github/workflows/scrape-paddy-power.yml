@@ -15,7 +15,18 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Connect to Surfshark VPN
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard-tools resolvconf
+          echo "${{ secrets.SURFSHARK_WG_CONFIG }}" | sudo tee /etc/wireguard/wg0.conf > /dev/null
+          sudo chmod 600 /etc/wireguard/wg0.conf
+          sudo wg-quick up wg0
+          curl -s https://ipinfo.io/country
       - run: node scripts/scrapePaddyPower.mjs
         env:
           NUXT_PUBLIC_SUPABASE_URL: ${{ secrets.NUXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Disconnect VPN
+        if: always()
+        run: sudo wg-quick down wg0 || true
