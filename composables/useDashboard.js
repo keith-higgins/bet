@@ -42,31 +42,32 @@ export function useDashboard() {
   )
   const potentialReturn = computed(() => Number(stake.value || 0) * combinedOdds.value)
   const allRounds = computed(() => [round.value, ...previousRounds.value])
-  const totalProfitLoss = computed(() =>
-    allRounds.value.reduce(
-      (total, item) =>
-        total +
-        (item.bets || []).reduce(
-          (roundTotal, currentBet) =>
-            roundTotal +
-            (['won', 'lost'].includes(currentBet.status)
-              ? Number(currentBet.actualReturn || 0) - Number(currentBet.stake || 0)
-              : 0),
-          0
-        ),
+  const personalBets = computed(() => {
+    const playerId = currentUserId.value || bet.value.bettorId
+    return allRounds.value
+      .flatMap((item) => item.bets || [])
+      .filter((currentBet) => !playerId || currentBet.bettorId === playerId)
+  })
+  const personalSettledBets = computed(() =>
+    personalBets.value.filter((currentBet) => ['won', 'lost'].includes(currentBet.status))
+  )
+  const personalProfitLoss = computed(() =>
+    personalSettledBets.value.reduce(
+      (total, currentBet) =>
+        total + Number(currentBet.actualReturn || 0) - Number(currentBet.stake || 0),
       0
     )
   )
-  const bestWeekProfit = computed(() =>
+  const personalBestReturn = computed(() =>
     Math.max(
       0,
-      ...allRounds.value.flatMap((item) =>
-        (item.bets || [])
-          .filter((currentBet) => ['won', 'lost'].includes(currentBet.status))
-          .map((currentBet) => Number(currentBet.actualReturn || 0) - Number(currentBet.stake || 0))
-      )
+      ...personalSettledBets.value.map((currentBet) => Number(currentBet.actualReturn || 0))
     )
   )
+  const personalRecord = computed(() => ({
+    won: personalSettledBets.value.filter((currentBet) => currentBet.status === 'won').length,
+    lost: personalSettledBets.value.filter((currentBet) => currentBet.status === 'lost').length
+  }))
   const playersForWeek = computed(() =>
     round.value.members?.length ? round.value.members : players.value
   )
@@ -85,7 +86,6 @@ export function useDashboard() {
       round.value.bettorId ||
       ''
   )
-  const currentBettorName = computed(() => round.value.bettor || 'No week yet')
   const canManageCurrentBet = computed(
     () =>
       !databaseEnabled.value ||
@@ -374,12 +374,12 @@ export function useDashboard() {
     settled,
     combinedOdds,
     potentialReturn,
-    totalProfitLoss,
-    bestWeekProfit,
+    personalProfitLoss,
+    personalBestReturn,
+    personalRecord,
     currentUserName,
     players: playersForWeek,
     assignableUsers,
-    currentBettorName,
     trackedMatches,
     canManageCurrentBet,
     isAdmin,

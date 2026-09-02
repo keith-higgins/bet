@@ -12,7 +12,7 @@ onMounted(async () => {
     <section class="page-heading">
       <p class="overline">YOUR CHALLENGE</p>
       <h1>History</h1>
-      <p class="subheading">Every round, result, and return in one place.</p>
+      <p class="subheading">Season totals, useful filters, and every selection in one place.</p>
     </section>
     <LoadingSpinner v-if="loading" label="Loading Premier League history…" />
     <div v-else-if="lastError" class="error-panel" role="alert">{{ lastError }}</div>

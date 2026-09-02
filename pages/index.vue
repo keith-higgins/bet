@@ -35,9 +35,9 @@ async function saveNewRound(details) {
         @new-round="newRoundOpen = true"
       />
       <StatsSummary
-        :total-profit-loss="dashboard.totalProfitLoss"
-        :best-week-profit="dashboard.bestWeekProfit"
-        :current-bettor="dashboard.currentBettorName"
+        :personal-profit-loss="dashboard.personalProfitLoss"
+        :personal-best-return="dashboard.personalBestReturn"
+        :personal-record="dashboard.personalRecord"
         :loading="dashboard.loading && !dashboard.round.id"
         :money="dashboard.money"
       />
