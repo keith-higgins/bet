@@ -34,3 +34,24 @@ export async function readCachedPaddyPowerOdds(competition) {
     matches: data.matches
   }
 }
+
+export async function readAllCachedPaddyPowerOdds() {
+  const client = adminClient()
+  if (!client) {
+    throw createError({ statusCode: 503, statusMessage: 'Supabase is not configured.' })
+  }
+
+  const { data, error } = await client
+    .from('paddy_power_odds')
+    .select('competition, fetched_at, matches, updated_at')
+
+  if (error) throw createError({ statusCode: 500, statusMessage: error.message })
+
+  return (data || []).map((row) => ({
+    source: 'paddypower-cache',
+    competition: row.competition,
+    fetchedAt: row.fetched_at,
+    updatedAt: row.updated_at,
+    matches: row.matches
+  }))
+}

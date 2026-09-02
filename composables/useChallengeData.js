@@ -1,8 +1,8 @@
 import { useSupabaseClient } from '~/lib/supabase'
-import { MARKET_DATABASE_VALUES, MARKET_UI_VALUES } from '~/lib/betting'
+import { MARKET_UI_VALUES, resolveMarketDatabaseValue } from '~/lib/betting'
 
 function toDatabaseMarket(market) {
-  return MARKET_DATABASE_VALUES[market] || market
+  return resolveMarketDatabaseValue(market)
 }
 
 function toUiMarket(market) {
