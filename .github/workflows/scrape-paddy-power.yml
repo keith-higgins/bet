@@ -22,21 +22,7 @@ jobs:
           echo "${{ secrets.SURFSHARK_WG_CONFIG }}" | sudo tee /etc/wireguard/wg0.conf > /dev/null
           sudo sed -i '/^DNS/d' /etc/wireguard/wg0.conf
           sudo chmod 600 /etc/wireguard/wg0.conf
-          echo "--- config shape (counts only, values stay masked) ---"
-          echo "total lines: $(sudo wc -l < /etc/wireguard/wg0.conf)"
-          echo "[Interface] headers: $(sudo grep -c '^\[Interface\]' /etc/wireguard/wg0.conf)"
-          echo "[Peer] headers: $(sudo grep -c '^\[Peer\]' /etc/wireguard/wg0.conf)"
-          echo "PrivateKey lines: $(sudo grep -ic '^PrivateKey' /etc/wireguard/wg0.conf)"
-          echo "Address lines: $(sudo grep -ic '^Address' /etc/wireguard/wg0.conf)"
-          echo "PublicKey lines: $(sudo grep -ic '^PublicKey' /etc/wireguard/wg0.conf)"
-          echo "Endpoint lines: $(sudo grep -ic '^Endpoint' /etc/wireguard/wg0.conf)"
-          echo "AllowedIPs lines: $(sudo grep -ic '^AllowedIPs' /etc/wireguard/wg0.conf)"
           sudo wg-quick up wg0
-          echo "--- wg show ---"
-          sudo wg show
-          echo "--- routes ---"
-          ip route show
-          ip route show table all | grep wg0 || echo "no wg0 routes found"
           echo "--- country check ---"
           curl -s https://ipinfo.io/country
       - run: node scripts/scrapePaddyPower.mjs
