@@ -38,7 +38,7 @@ defineProps({
         <strong v-else class="big-number positive">{{ money(personalBestReturn) }}</strong>
         <div class="stat-foot"><span>Highest settled return</span></div>
       </article>
-      <article class="stat-card">
+      <article class="stat-card record-card">
         <div class="stat-top"><span>Your record</span></div>
         <LoadingSpinner v-if="loading" label="Loading…" small />
         <strong v-else class="big-number"

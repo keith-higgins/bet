@@ -514,25 +514,48 @@ function resetFilters() {
   }
 }
 
+@media (max-width: 760px) {
+  .history-card-outcome {
+    display: none;
+  }
+
+  .history-card-button {
+    align-items: flex-start;
+    min-height: 64px;
+  }
+
+  .history-card-result {
+    flex: 0 0 72px;
+    width: 72px;
+  }
+
+  .history-details {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .history-leg {
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 520px) {
   .history-summary {
     grid-template-columns: 1fr;
   }
 
-  .history-card-outcome {
-    display: none;
-  }
-
   .history-toolbar {
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .history-toolbar label {
-    flex: 1 1 140px;
+    min-width: 0;
   }
 
   .history-reset {
-    margin-left: 0;
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .history-bet-header {
