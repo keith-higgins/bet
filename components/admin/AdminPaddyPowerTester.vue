@@ -24,28 +24,9 @@ const result = ref(null)
 const eventResult = ref(null)
 
 const expandedId = ref('')
-const expandedMarkets = reactive({})
-const expandedLoading = ref('')
-const expandedError = ref('')
 
-async function toggleExpand(match) {
-  if (expandedId.value === match.id) {
-    expandedId.value = ''
-    return
-  }
-  expandedId.value = match.id
-  expandedError.value = ''
-  if (expandedMarkets[match.id]) return
-
-  expandedLoading.value = match.id
-  try {
-    const data = await $fetch(`/api/paddypower/event/${match.id}`)
-    expandedMarkets[match.id] = data.match?.markets || []
-  } catch (value) {
-    expandedError.value = value?.data?.statusMessage || value?.message || 'Unable to load full markets.'
-  } finally {
-    expandedLoading.value = ''
-  }
+function toggleExpand(match) {
+  expandedId.value = expandedId.value === match.id ? '' : match.id
 }
 
 async function fetchOdds() {
@@ -142,14 +123,10 @@ function matchOdds(match) {
               </tr>
               <tr v-if="expandedId === match.id" class="pp-tester-expanded-row">
                 <td colspan="7">
-                  <LoadingSpinner v-if="expandedLoading === match.id" label="Loading full markets…" inline small />
-                  <p v-else-if="expandedError" class="auth-error" role="alert">{{ expandedError }}</p>
-                  <p v-else-if="!expandedMarkets[match.id]?.length" class="admin-users-empty">
-                    No markets found for this event.
-                  </p>
+                  <p v-if="!match.markets?.length" class="admin-users-empty">No markets found for this event.</p>
                   <table v-else class="pp-tester-table pp-tester-submarkets">
                     <tbody>
-                      <tr v-for="market in expandedMarkets[match.id]" :key="market.name">
+                      <tr v-for="market in match.markets" :key="market.name">
                         <td>{{ market.name }}</td>
                         <td class="pp-tester-selections">
                           <span
