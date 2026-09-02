@@ -4,6 +4,7 @@ import { BET_MARKETS, getMarketPickOptions } from '~/lib/betting'
 const props = defineProps({ legs: { type: Array, default: () => [] } })
 const emit = defineEmits(['update:legs', 'add', 'remove'])
 const results = ref({})
+const searchErrors = ref({})
 const searching = ref(null)
 const searchTimers = {}
 
@@ -35,6 +36,7 @@ function handleMatchInput(index, value) {
   updateMatch(index, value)
   clearTimeout(searchTimers[index])
   results.value = { ...results.value, [index]: [] }
+  searchErrors.value = { ...searchErrors.value, [index]: '' }
   if (value.trim().length < 2) return
   searchTimers[index] = window.setTimeout(() => searchFixtures(index, value), 250)
 }
@@ -44,8 +46,12 @@ async function searchFixtures(index, query) {
   try {
     const response = await $fetch('/api/football/fixtures', { query: { q: query } })
     results.value = { ...results.value, [index]: response.fixtures || [] }
-  } catch {
+  } catch (error) {
     results.value = { ...results.value, [index]: [] }
+    searchErrors.value = {
+      ...searchErrors.value,
+      [index]: error.data?.statusMessage || 'Fixture search is temporarily unavailable.'
+    }
   } finally {
     searching.value = null
   }
@@ -108,6 +114,9 @@ function pickOptions(leg) {
         <span v-if="searching === index" class="fixture-search-status"
           ><LoadingSpinner label="Searching fixtures…" inline small
         /></span>
+        <small v-if="searchErrors[index]" class="fixture-search-error">{{
+          searchErrors[index]
+        }}</small>
         <div v-if="results[index]?.length" class="fixture-results">
           <button
             v-for="fixture in results[index]"
@@ -176,6 +185,13 @@ function pickOptions(leg) {
   display: block;
   margin-top: 6px;
   color: var(--muted);
+  font-size: 9px;
+}
+
+.fixture-search-error {
+  display: block;
+  margin-top: 6px;
+  color: var(--red);
   font-size: 9px;
 }
 
