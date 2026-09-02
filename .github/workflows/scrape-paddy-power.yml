@@ -22,6 +22,8 @@ jobs:
           echo "${{ secrets.SURFSHARK_WG_CONFIG }}" | sudo tee /etc/wireguard/wg0.conf > /dev/null
           sudo sed -i '/^DNS/d' /etc/wireguard/wg0.conf
           sudo chmod 600 /etc/wireguard/wg0.conf
+          echo "--- config shape (keys masked) ---"
+          sudo grep -v -i "PrivateKey" /etc/wireguard/wg0.conf
           sudo wg-quick up wg0
           echo "--- wg show ---"
           sudo wg show
