@@ -130,10 +130,18 @@ Without the Supabase variables, the app opens in local preview mode. The dashboa
 ## Supabase setup
 
 1. Create a Supabase project.
-2. In the Supabase SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql).
+2. For a new installation, run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL Editor. For an existing installation, run the latest migration: [`supabase/migrations/20260902000000_add_admin_roles.sql`](./supabase/migrations/20260902000000_add_admin_roles.sql).
 3. Add the project URL and keys to `.env.local`.
 4. In Supabase Auth → URL Configuration, add `http://localhost:3000` as a local site URL before testing sign-in.
-5. Start the app and create the first account, or use Manage → Add a player.
+5. Create your first account, then promote it to admin in the Supabase SQL Editor:
+
+   ```sql
+   update public.profiles
+   set role = 'admin'
+   where id = (select id from auth.users where email = 'your-email@example.com');
+   ```
+
+6. Sign in again. Admins can then use Manage → Add a player and the user directory.
 
 `supabase/reset.sql` is a destructive development reset. It drops the application tables and recreates them, but leaves Supabase Auth users intact. Run it only when the stored league data can be discarded.
 
@@ -149,7 +157,7 @@ Supabase Auth is the source of truth for users. Application data is stored in th
 | `bet_selections`  | Each bet leg, market, pick, odds, and result status                    |
 | `match_sync_runs` | The status and error history of server-side score syncs                |
 
-Row-level security is enabled on all application tables. The current policies allow any authenticated user to manage all application rows; `/admin` is a shared management screen, not a role-protected administrator area.
+Row-level security is enabled on all application tables. Authenticated users can view the shared league and manage their own bets. Only admins can create, edit, or delete weeks, edit another player's bet, view the full user directory, create accounts, or change roles. The assigned bettor can update a week's settlement status, but a database trigger prevents them from changing the week metadata.
 
 ## Football data and score sync
 
@@ -197,6 +205,7 @@ lib/football/provider.js   TheSportsDB client and normalized fixture model
 lib/supabase.js            Shared Supabase client creation
 server/api/                Server-only football, admin, and sync endpoints
 supabase/schema.sql        Application schema and RLS policies
+supabase/migrations/       Incremental database migrations
 supabase/reset.sql         Destructive development schema reset
 public/                    PWA manifest, icon, and service worker
 ```

@@ -1,5 +1,6 @@
 <script setup>
 const route = useRoute()
+const { isAdmin } = usePlayerContext()
 const manageActive = computed(() => route.path === '/admin' || route.path === '/challenges')
 </script>
 
@@ -17,7 +18,7 @@ const manageActive = computed(() => route.path === '/admin' || route.path === '/
       <NuxtLink class="nav-item" to="/" exact-active-class="active"
         ><span class="nav-icon">⌂</span><span>Overview</span></NuxtLink
       >
-      <NuxtLink class="nav-item" to="/admin" :class="{ active: manageActive }"
+      <NuxtLink v-if="isAdmin" class="nav-item" to="/admin" :class="{ active: manageActive }"
         ><span class="nav-icon">＋</span><span>Manage</span></NuxtLink
       >
       <NuxtLink class="nav-item" to="/account" exact-active-class="active"

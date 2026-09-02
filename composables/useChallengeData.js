@@ -13,6 +13,7 @@ function normalizeUser(user) {
   return {
     userId: user.userId || user.id || user.user_id,
     email: user.email || '',
+    role: user.role || 'player',
     displayName:
       user.displayName ||
       user.display_name ||
@@ -33,7 +34,7 @@ function toUiWeek(row, users = []) {
       userId,
       email: user?.email || '',
       displayName: user?.displayName || 'Player',
-      role: 'player'
+      role: user?.role || 'player'
     }
   })
   const memberName = (userId) =>
@@ -116,14 +117,15 @@ export function useChallengeData() {
           email: currentUser.email || '',
           displayName:
             currentUser.user_metadata?.display_name || currentUser.email?.split('@')[0] || 'You',
+          role: playerContext.currentUserRole.value,
           isMember: false
         }
       : null
     try {
-      const result = await $fetch('/api/admin/users', {
+      const result = await $fetch('/api/players', {
         headers: { Authorization: `Bearer ${session.access_token}` }
       })
-      const users = result.users || []
+      const users = result.players || []
       if (currentUserOption && !users.some((user) => user.userId === currentUserOption.userId)) {
         users.unshift(currentUserOption)
       }
@@ -135,7 +137,7 @@ export function useChallengeData() {
       return users
     } catch (error) {
       lastError.value = error.data?.statusMessage || error.message
-      console.warn('Could not load Auth users:', lastError.value)
+      console.warn('Could not load players:', lastError.value)
       const users = currentUserOption ? [currentUserOption] : []
       playerContext.setPeople(
         users,

@@ -29,16 +29,22 @@ async function saveAccount() {
     return
   }
   loading.value = true
-  const updates = { data: { display_name: name.value.trim() } }
-  if (password.value) updates.password = password.value
-  const { error: updateError } = await client.auth.updateUser(updates)
-  loading.value = false
-  if (updateError) error.value = updateError.message
-  else {
+  try {
+    const { data: sessionResult } = await client.auth.getSession()
+    if (!sessionResult.session) throw new Error('Please sign in again.')
+    await $fetch('/api/account', {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${sessionResult.session.access_token}` },
+      body: { displayName: name.value.trim(), password: password.value }
+    })
     currentUserName.value = name.value.trim()
     message.value = password.value ? 'Account and password updated.' : 'Account updated.'
     password.value = ''
     confirmation.value = ''
+  } catch (value) {
+    error.value = value?.data?.statusMessage || value?.message || 'Unable to update account.'
+  } finally {
+    loading.value = false
   }
 }
 async function logout() {

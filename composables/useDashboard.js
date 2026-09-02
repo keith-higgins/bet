@@ -1,5 +1,5 @@
 export function useDashboard() {
-  const { players, currentUserId, currentUserName } = usePlayerContext()
+  const { players, currentUserId, currentUserName, isAdmin } = usePlayerContext()
   const {
     databaseEnabled,
     lastError,
@@ -88,7 +88,10 @@ export function useDashboard() {
   const currentBettorName = computed(() => round.value.bettor || 'No week yet')
   const canManageCurrentBet = computed(
     () =>
-      !currentUserId.value || !round.value.bettorId || currentUserId.value === round.value.bettorId
+      !databaseEnabled.value ||
+      isAdmin.value ||
+      (Boolean(round.value.id) &&
+        (!currentUserId.value || currentUserId.value === round.value.bettorId))
   )
   const leaders = computed(() => {
     const allBets = allRounds.value.flatMap((item) => item.bets || [])
@@ -379,6 +382,7 @@ export function useDashboard() {
     currentBettorName,
     trackedMatches,
     canManageCurrentBet,
+    isAdmin,
     nextBettorId,
     leaders,
     money,

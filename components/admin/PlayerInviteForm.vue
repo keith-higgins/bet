@@ -8,6 +8,7 @@ const loading = ref(false)
 const message = ref('')
 const error = ref('')
 const client = useSupabaseClient()
+const emit = defineEmits(['created'])
 
 async function invitePlayer() {
   loading.value = true
@@ -22,6 +23,7 @@ async function invitePlayer() {
       body: { email: email.value, displayName: displayName.value, password: password.value }
     })
     message.value = `Player account created for ${email.value}.`
+    emit('created')
     email.value = ''
     displayName.value = ''
     password.value = ''

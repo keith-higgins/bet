@@ -31,7 +31,7 @@ function initials(name) {
       <div>
         <p class="overline">THE CURRENT ROUND</p>
         <h2>
-          Week {{ round.week }}
+          {{ round.title || `Week ${round.week}` }}
           <span class="badge">{{
             roundSettled ? 'Settled' : round.id ? 'In progress' : 'Not started'
           }}</span>
@@ -44,8 +44,8 @@ function initials(name) {
     <article class="challenge-card">
       <div class="challenge-head">
         <div>
-          <span class="week-kicker">Deadline {{ round.dates }}</span>
-          <h3>{{ round.title }}</h3>
+          <span class="week-kicker">{{ round.title }} · Deadline {{ round.dates }}</span>
+          <h3>{{ round.bettor ? `${round.bettor}'s turn` : 'Weekly accumulator' }}</h3>
         </div>
         <div class="round-values">
           <div class="stake-pill">
