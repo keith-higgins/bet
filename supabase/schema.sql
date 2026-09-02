@@ -76,6 +76,14 @@ create table public.match_sync_runs (
   error text
 );
 
+create table public.paddy_power_odds (
+  competition text primary key,
+  fetched_at timestamptz not null,
+  matches jsonb not null,
+  raw jsonb,
+  updated_at timestamptz not null default now()
+);
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -137,6 +145,7 @@ alter table public.bets enable row level security;
 alter table public.matches enable row level security;
 alter table public.bet_selections enable row level security;
 alter table public.match_sync_runs enable row level security;
+alter table public.paddy_power_odds enable row level security;
 
 create policy "authenticated users can view profiles"
 on public.profiles for select to authenticated
@@ -229,5 +238,9 @@ with check (auth.uid() is not null);
 create policy "admins can view sync runs"
 on public.match_sync_runs for select to authenticated
 using (public.is_admin());
+
+create policy "authenticated users can view paddy power odds"
+on public.paddy_power_odds for select to authenticated
+using (auth.uid() is not null);
 
 alter publication supabase_realtime add table public.weeks, public.bets, public.bet_selections, public.matches;

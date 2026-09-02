@@ -23,5 +23,6 @@ const usersVersion = ref(0)
       >
     </div>
     <AdminUserList :key="usersVersion" />
+    <AdminPaddyPowerTester />
   </div>
 </template>

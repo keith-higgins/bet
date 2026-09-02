@@ -31,8 +31,15 @@ export default defineNuxtConfig({
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }]
     }
   },
+  nitro: {
+    externals: {
+      inline: [],
+      external: ['playwright']
+    }
+  },
   runtimeConfig: {
     footballProviderApiKey: process.env.FOOTBALL_PROVIDER_API_KEY || '',
+    paddyPowerPageUrl: process.env.PADDY_POWER_PAGE_URL || '',
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     syncSecret: process.env.SYNC_SECRET || '',
     public: {
