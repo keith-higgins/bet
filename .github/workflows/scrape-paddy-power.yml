@@ -23,6 +23,12 @@ jobs:
           sudo sed -i '/^DNS/d' /etc/wireguard/wg0.conf
           sudo chmod 600 /etc/wireguard/wg0.conf
           sudo wg-quick up wg0
+          echo "--- wg show ---"
+          sudo wg show
+          echo "--- routes ---"
+          ip route show
+          ip route show table all | grep wg0 || echo "no wg0 routes found"
+          echo "--- country check ---"
           curl -s https://ipinfo.io/country
       - run: node scripts/scrapePaddyPower.mjs
         env:
