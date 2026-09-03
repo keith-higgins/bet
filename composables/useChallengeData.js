@@ -211,7 +211,11 @@ export function useChallengeData() {
   }
 
   async function saveBetToDatabase({ roundId, bettorId, bet, legs, matches }) {
-    if (!client || !roundId || !bettorId) return false
+    if (!client) return false
+    if (!roundId || !bettorId) {
+      lastError.value = 'Create a week before saving a bet.'
+      return false
+    }
     loading.value = true
     try {
       const combinedOdds = legs.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)

@@ -13,27 +13,29 @@ export function useDashboard() {
     deleteWeek
   } = useChallengeData()
 
-  const round = ref({
+  const round = useState('dashboard-round', () => ({
     id: null,
     week: 1,
     title: 'Your first Premier League week',
     dates: 'No round created yet',
     bets: []
-  })
-  const previousRounds = ref([])
-  const assignableUsers = ref([])
-  const bet = ref({
+  }))
+  const previousRounds = useState('dashboard-previous-rounds', () => [])
+  const assignableUsers = useState('dashboard-assignable-users', () => [])
+  const bet = useState('dashboard-bet', () => ({
     id: null,
     bettorId: null,
     type: 'Accumulator',
     stake: 20,
     status: 'pending',
     selections: []
-  })
-  const legs = ref([{ match: '', market: 'Match result', pick: '', odds: 1.5, status: 'pending' }])
-  const stake = ref(20)
-  const loading = ref(databaseEnabled.value)
-  const toast = ref('')
+  }))
+  const legs = useState('dashboard-legs', () => [
+    { match: '', market: 'Match result', pick: '', odds: 1.5, status: 'pending' }
+  ])
+  const stake = useState('dashboard-stake', () => 20)
+  const loading = useState('dashboard-loading', () => databaseEnabled.value)
+  const toast = useState('dashboard-toast', () => '')
   let toastTimer
 
   const settled = computed(() => ['won', 'lost'].includes(bet.value.status))
@@ -68,6 +70,20 @@ export function useDashboard() {
     won: personalSettledBets.value.filter((currentBet) => currentBet.status === 'won').length,
     lost: personalSettledBets.value.filter((currentBet) => currentBet.status === 'lost').length
   }))
+  const personalStaked = computed(() =>
+    personalSettledBets.value.reduce(
+      (total, currentBet) => total + Number(currentBet.stake || 0),
+      0
+    )
+  )
+  const personalForm = computed(() =>
+    [...personalBets.value]
+      .reverse()
+      .slice(-8)
+      .map((currentBet) =>
+        currentBet.status === 'won' ? 'won' : currentBet.status === 'lost' ? 'lost' : 'pending'
+      )
+  )
   const playersForWeek = computed(() =>
     round.value.members?.length ? round.value.members : players.value
   )
@@ -89,9 +105,10 @@ export function useDashboard() {
   const canManageCurrentBet = computed(
     () =>
       !databaseEnabled.value ||
-      isAdmin.value ||
       (Boolean(round.value.id) &&
-        (!currentUserId.value || currentUserId.value === round.value.bettorId))
+        (isAdmin.value ||
+          !currentUserId.value ||
+          currentUserId.value === round.value.bettorId))
   )
   const leaders = computed(() => {
     const allBets = allRounds.value.flatMap((item) => item.bets || [])
@@ -139,6 +156,11 @@ export function useDashboard() {
           right.record.localeCompare(left.record) ||
           left.name.localeCompare(right.name)
       )
+  })
+  const personalTablePosition = computed(() => {
+    const total = leaders.value.length
+    const rank = leaders.value.findIndex((leader) => leader.userId === currentUserId.value) + 1
+    return { rank: rank || total, total }
   })
   const money = (value) => `€ ${Number(value || 0).toFixed(2)}`
 
@@ -206,13 +228,17 @@ export function useDashboard() {
   }
 
   async function saveBet(payload) {
+    if (databaseEnabled.value && !round.value.id) {
+      notify('Create this week before adding a bet.')
+      return false
+    }
     loading.value = true
-    const nextLegs = payload.legs.map((leg, index) => ({
+    const nextLegs = payload.legs.map((leg) => ({
       ...leg,
       odds: Number(leg.odds),
       status: 'pending'
     }))
-    bet.value = {
+    const nextBet = {
       ...bet.value,
       stake: Number(payload.stake),
       selections: nextLegs.map((leg, index) => ({
@@ -229,37 +255,35 @@ export function useDashboard() {
         status: 'pending'
       }))
     }
-    stake.value = Number(payload.stake)
-    legs.value = nextLegs
-    round.value = {
-      ...round.value,
-      bets: [...round.value.bets.filter((item) => item.bettorId !== bet.value.bettorId), bet.value]
-    }
     const saved = await saveBetToDatabase({
       roundId: round.value.id,
-      bettorId: bet.value.bettorId,
-      bet: bet.value,
+      bettorId: nextBet.bettorId,
+      bet: nextBet,
       legs: nextLegs,
       matches: []
     })
     if (saved && typeof saved === 'object') {
-      bet.value = {
-        ...bet.value,
-        id: saved.betId || bet.value.id,
-        selections: bet.value.selections.map((selection, index) => ({
-          ...selection,
-          id: saved.selectionIds?.[index] || selection.id
-        }))
-      }
+      nextBet.id = saved.betId || nextBet.id
+      nextBet.selections = nextBet.selections.map((selection, index) => ({
+        ...selection,
+        id: saved.selectionIds?.[index] || selection.id
+      }))
+    }
+    // Only commit to local state once the bet is actually persisted (or there's
+    // no backend to persist to) — otherwise a failed save left the UI showing a
+    // bet that was never saved.
+    if (saved || !databaseEnabled.value) {
+      bet.value = nextBet
+      stake.value = Number(payload.stake)
       legs.value = nextLegs.map((leg, index) => ({
         ...leg,
-        id: saved.selectionIds?.[index] || leg.id
+        id: nextBet.selections[index]?.id || leg.id
       }))
       round.value = {
         ...round.value,
         bets: [
-          ...round.value.bets.filter((item) => item.bettorId !== bet.value.bettorId),
-          bet.value
+          ...round.value.bets.filter((item) => item.bettorId !== nextBet.bettorId),
+          nextBet
         ]
       }
     }
@@ -377,6 +401,10 @@ export function useDashboard() {
     personalProfitLoss,
     personalBestReturn,
     personalRecord,
+    personalStaked,
+    personalForm,
+    personalTablePosition,
+    currentUserId,
     currentUserName,
     players: playersForWeek,
     assignableUsers,

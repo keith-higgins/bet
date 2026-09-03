@@ -2,17 +2,30 @@
 import { useSupabaseClient } from '~/lib/supabase'
 
 const client = useSupabaseClient()
-const { currentUserName } = usePlayerContext()
+const { currentUserName, isAdmin } = usePlayerContext()
 const name = ref('')
+const email = ref('')
 const password = ref('')
 const confirmation = ref('')
 const message = ref('')
 const error = ref('')
 const loading = ref(false)
+
 onMounted(async () => {
   const result = await client?.auth.getUser()
   name.value = result?.data?.user?.user_metadata?.display_name || ''
+  email.value = result?.data?.user?.email || ''
 })
+
+function initials(value) {
+  return (value || 'Player')
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
 async function saveAccount() {
   message.value = ''
   error.value = ''
@@ -54,40 +67,56 @@ async function logout() {
 </script>
 
 <template>
-  <section class="auth-card account-card">
-    <p class="overline">ACCOUNT SETTINGS</p>
-    <h1>Your account</h1>
-    <p>
-      Update your name or add a password for email login. All signed-in players share the same game.
-    </p>
-    <form @submit.prevent="saveAccount">
-      <label
-        >Display name<input
-          v-model="name"
-          type="text"
-          maxlength="60"
-          placeholder="Your name"
-          required /></label
-      ><label
-        >New password<input
+  <div class="screen-pad">
+    <div class="account-profile-header">
+      <div class="avatar account-avatar">{{ initials(name || currentUserName) }}</div>
+      <div>
+        <strong>{{ name || currentUserName }}</strong>
+        <span class="mono-meta">{{ email }} &middot; {{ isAdmin ? 'ADMIN' : 'PLAYER' }}</span>
+      </div>
+    </div>
+
+    <form class="manage-card" @submit.prevent="saveAccount">
+      <p class="builder-field-label">ACCOUNT SETTINGS</p>
+      <label class="manage-field">
+        <span>Display name</span>
+        <input v-model="name" type="text" maxlength="60" placeholder="Your name" required />
+      </label>
+      <label class="manage-field">
+        <span>New password</span>
+        <input
           v-model="password"
           type="password"
           minlength="6"
-          placeholder="Leave blank to keep current password" /></label
-      ><label
-        >Confirm password<input
+          placeholder="Leave blank to keep current"
+        />
+      </label>
+      <label class="manage-field">
+        <span>Confirm password</span>
+        <input
           v-model="confirmation"
           type="password"
           minlength="6"
           placeholder="Repeat new password"
-      /></label>
-      <p v-if="message" class="auth-success">{{ message }}</p>
-      <p v-if="error" class="auth-error">{{ error }}</p>
-      <button class="primary-button full-width" :disabled="loading">
+        />
+      </label>
+      <p v-if="message" class="builder-hint" style="color: var(--lime)">{{ message }}</p>
+      <p v-if="error" class="builder-error">{{ error }}</p>
+      <button class="hero-button manage-lime-button" :disabled="loading">
         <LoadingSpinner v-if="loading" label="Saving…" inline small />
-        <template v-else>Save account →</template>
+        <template v-else>Save account</template>
       </button>
     </form>
-    <button class="logout-button" type="button" @click="logout">Log out</button>
-  </section>
+
+    <NuxtLink v-if="isAdmin" class="admin-link-card" to="/admin">
+      <span class="admin-link-body">
+        <span class="builder-field-label" style="margin-bottom: 6px">ADMIN</span>
+        <strong>Manage league</strong>
+        <small>Players, roles and weekly turns</small>
+      </span>
+      <span class="admin-link-arrow">&rarr;</span>
+    </NuxtLink>
+
+    <button type="button" class="logout-button" @click="logout">Log out</button>
+  </div>
 </template>

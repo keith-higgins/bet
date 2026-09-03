@@ -1,31 +1,25 @@
 <script setup>
-defineProps({
+const props = defineProps({
   leaders: { type: Array, default: () => [] },
+  limit: { type: Number, default: 3 },
   money: { type: Function, required: true }
 })
+const visibleLeaders = computed(() => props.leaders.slice(0, props.limit))
 </script>
 
 <template>
-  <section>
-    <div class="section-heading">
-      <div>
-        <p class="overline">THE SCOREBOARD</p>
-        <h2>League leaders</h2>
-      </div>
+  <div class="acca-card">
+    <div v-for="(leader, index) in visibleLeaders" :key="leader.userId" class="league-preview-row">
+      <span class="league-preview-rank">{{ index + 1 }}</span>
+      <div class="avatar" :class="index === 0 ? 'purple' : 'yellow'">{{ leader.initials }}</div>
+      <span class="league-preview-name">{{ leader.name }}</span>
+      <span class="mono-meta">{{ leader.record }}</span>
+      <span class="league-preview-profit" :class="{ negative: leader.profit < 0 }">{{
+        money(leader.profit)
+      }}</span>
     </div>
-    <article class="leaderboard">
-      <div v-for="(leader, index) in leaders" :key="leader.userId" class="leader-row">
-        <div class="leader-person">
-          <span class="rank">{{ index + 1 }}</span>
-          <div class="avatar" :class="index === 0 ? 'purple' : 'yellow'">{{ leader.initials }}</div>
-          <strong>{{ leader.name }}</strong>
-        </div>
-        <strong>{{ leader.record }}</strong
-        ><span class="profit" :class="{ loss: leader.profit < 0 }">{{ money(leader.profit) }}</span>
-      </div>
-      <div v-if="!leaders.length" class="empty-state">
-        <strong>No players yet</strong><span>Invite someone to start the scoreboard.</span>
-      </div>
-    </article>
-  </section>
+    <div v-if="!visibleLeaders.length" class="acca-empty">
+      <span>No players yet. Invite someone to start the scoreboard.</span>
+    </div>
+  </div>
 </template>

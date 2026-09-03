@@ -2,12 +2,17 @@
 import { useSupabaseClient } from '~/lib/supabase'
 
 const client = useSupabaseClient()
+// Editing a player here (name, role) changes data the shared dashboard state
+// also holds (assignable users, leaderboard names) — refresh it too, or Home
+// and League keep showing the old values until a hard reload.
+const dashboard = reactive(useDashboard())
 const users = ref([])
 const drafts = reactive({})
 const loading = ref(false)
 const savingId = ref('')
 const error = ref('')
 const message = ref('')
+const openUserId = ref(null)
 
 function sessionHeaders(session) {
   return { Authorization: `Bearer ${session.access_token}` }
@@ -56,6 +61,7 @@ async function saveUser(user) {
     if (index !== -1) users.value[index] = result.user
     setDraft(result.user)
     message.value = `${result.user.displayName} updated.`
+    await dashboard.loadDashboard()
   } catch (value) {
     error.value = value?.data?.statusMessage || value?.message || 'Unable to update user.'
   } finally {
@@ -63,63 +69,47 @@ async function saveUser(user) {
   }
 }
 
-function formatDate(value) {
-  if (!value) return 'Never'
-  return new Date(value).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
+function toggle(userId) {
+  openUserId.value = openUserId.value === userId ? null : userId
 }
 
 onMounted(loadUsers)
 </script>
 
 <template>
-  <section class="admin-users-card">
-    <div class="admin-users-heading">
-      <div>
-        <p class="overline">USER DIRECTORY</p>
-        <h2>Players and admins</h2>
-        <p>Update names, access levels, and passwords for the shared league.</p>
-      </div>
-      <button class="outline-button" type="button" :disabled="loading" @click="loadUsers">
-        {{ loading ? 'Loading…' : 'Refresh' }}
-      </button>
-    </div>
-
-    <p v-if="message" class="auth-success">{{ message }}</p>
-    <p v-if="error" class="auth-error" role="alert">{{ error }}</p>
+  <div class="manage-user-list">
+    <p v-if="message" class="builder-hint" style="color: var(--lime)">{{ message }}</p>
+    <p v-if="error" class="builder-error" role="alert">{{ error }}</p>
     <LoadingSpinner v-if="loading && !users.length" label="Loading users…" />
-    <div v-else-if="!users.length" class="admin-users-empty">No users found.</div>
-    <div v-else class="admin-user-list">
-      <article v-for="user in users" :key="user.userId" class="admin-user-row">
-        <div class="admin-user-summary">
+    <div v-else-if="!users.length" class="acca-empty">No users found.</div>
+    <div v-else class="league-rows">
+      <article v-for="user in users" :key="user.userId" class="league-row-card manage-user-card">
+        <button type="button" class="manage-user-summary" @click="toggle(user.userId)">
           <div class="avatar" :class="user.role === 'admin' ? 'purple' : 'yellow'">
             {{ user.displayName.slice(0, 2).toUpperCase() }}
           </div>
-          <div>
-            <strong>{{ user.email }}</strong>
-            <small
-              >Joined {{ formatDate(user.createdAt) }} · Last sign-in
-              {{ formatDate(user.lastSignInAt) }}</small
-            >
+          <div class="league-row-main">
+            <strong>{{ user.displayName }}</strong>
+            <span class="mono-meta">{{ user.email }}</span>
           </div>
-        </div>
-        <div class="admin-user-fields">
-          <label>
-            Display name
+          <span class="status-pill" :class="user.role === 'admin' ? 'won' : 'upcoming'">{{
+            user.role.toUpperCase()
+          }}</span>
+        </button>
+        <div v-if="openUserId === user.userId" class="manage-user-edit">
+          <label class="manage-field">
+            <span>Display name</span>
             <input v-model="drafts[user.userId].displayName" maxlength="60" />
           </label>
-          <label>
-            Role
+          <label class="manage-field">
+            <span>Role</span>
             <select v-model="drafts[user.userId].role">
               <option value="player">Player</option>
               <option value="admin">Admin</option>
             </select>
           </label>
-          <label>
-            New password
+          <label class="manage-field">
+            <span>New password</span>
             <input
               v-model="drafts[user.userId].password"
               type="password"
@@ -128,7 +118,7 @@ onMounted(loadUsers)
             />
           </label>
           <button
-            class="primary-button"
+            class="hero-button manage-lime-button"
             type="button"
             :disabled="savingId === user.userId"
             @click="saveUser(user)"
@@ -139,127 +129,5 @@ onMounted(loadUsers)
         </div>
       </article>
     </div>
-  </section>
+  </div>
 </template>
-
-<style scoped>
-.admin-users-card {
-  grid-column: 1 / -1;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #fff;
-}
-
-.admin-users-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
-}
-
-.admin-users-heading h2 {
-  margin: 0;
-  font: 600 18px 'Space Grotesk';
-}
-
-.admin-users-heading p:not(.overline) {
-  margin: 7px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.admin-user-list {
-  display: grid;
-}
-
-.admin-user-row {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.admin-user-row:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-
-.admin-user-summary {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.admin-user-summary strong,
-.admin-user-summary small {
-  display: block;
-}
-
-.admin-user-summary strong {
-  font-size: 12px;
-}
-
-.admin-user-summary small {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.admin-user-fields {
-  display: grid;
-  grid-template-columns: 1.2fr 0.75fr 1.2fr auto;
-  align-items: end;
-  gap: 10px;
-}
-
-.admin-user-fields label {
-  display: grid;
-  gap: 5px;
-  color: #778397;
-  font-size: 10px;
-}
-
-.admin-user-fields input,
-.admin-user-fields select {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  color: var(--ink);
-  background: #fff;
-}
-
-.admin-users-empty {
-  padding: 22px 0 4px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-@media (max-width: 760px) {
-  .admin-users-card {
-    padding: 18px;
-  }
-
-  .admin-users-heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .admin-users-heading .outline-button {
-    align-self: flex-start;
-  }
-
-  .admin-user-fields {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .admin-user-fields label:first-child,
-  .admin-user-fields label:nth-child(3),
-  .admin-user-fields .primary-button {
-    grid-column: 1 / -1;
-  }
-}
-</style>

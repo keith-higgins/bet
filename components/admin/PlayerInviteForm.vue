@@ -36,40 +36,37 @@ async function invitePlayer() {
 </script>
 
 <template>
-  <section class="admin-form-card">
-    <div class="card-icon">＋</div>
-    <div>
-      <p class="overline">PLAYERS</p>
-      <h2>Add a player</h2>
-      <p>Invite your friend with a login so they can take their turn.</p>
-    </div>
-    <form @submit.prevent="invitePlayer">
-      <label
-        >Player’s name<input
-          v-model="displayName"
-          type="text"
-          maxlength="60"
-          placeholder="e.g. Alex Smith"
-          required /></label
-      ><label
-        >Player’s email address<input
-          v-model="email"
-          type="email"
-          placeholder="friend@example.com"
-          required /></label
-      ><label
-        >Initial password<input
-          v-model="password"
-          type="password"
-          minlength="6"
-          placeholder="At least 6 characters"
-          required /></label
-      ><button class="primary-button full-width" :disabled="loading">
-        <LoadingSpinner v-if="loading" label="Creating player…" inline small />
-        <template v-else>Add player →</template>
-      </button>
-      <p v-if="message" class="auth-success">{{ message }}</p>
-      <p v-if="error" class="auth-error">{{ error }}</p>
-    </form>
-  </section>
+  <form class="manage-card" @submit.prevent="invitePlayer">
+    <p class="builder-field-label">ADD A PLAYER</p>
+    <label class="manage-field">
+      <span>Player's name</span>
+      <input
+        v-model="displayName"
+        type="text"
+        maxlength="60"
+        placeholder="e.g. Alex Smith"
+        required
+      />
+    </label>
+    <label class="manage-field">
+      <span>Player's email address</span>
+      <input v-model="email" type="email" placeholder="friend@example.com" required />
+    </label>
+    <label class="manage-field">
+      <span>Initial password</span>
+      <input
+        v-model="password"
+        type="password"
+        minlength="6"
+        placeholder="At least 6 characters"
+        required
+      />
+    </label>
+    <button class="hero-button manage-lime-button" :disabled="loading">
+      <LoadingSpinner v-if="loading" label="Creating player…" inline small />
+      <template v-else>Add player &rarr;</template>
+    </button>
+    <p v-if="message" class="builder-hint" style="color: var(--lime)">{{ message }}</p>
+    <p v-if="error" class="builder-error">{{ error }}</p>
+  </form>
 </template>

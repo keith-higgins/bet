@@ -1,22 +1,56 @@
 <script setup>
 const route = useRoute()
+const { currentUserName } = usePlayerContext()
+const { liveCount, upcomingCount } = useLiveStatus()
+const { weekNumber, weekTitle, isYourTurn, isSettled, totalWeeksRecorded, playerCount } =
+  useAppMeta()
+
+function initials(name) {
+  return (name || 'Player')
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
 const pageTitle = computed(() => {
+  if (route.path === '/live') return 'Match centre'
   if (route.path === '/history') return 'History'
+  if (route.path === '/league') return 'League table'
   if (route.path === '/admin') return 'Manage'
   if (route.path === '/challenges') return 'Manage weeks'
   if (route.path === '/account') return 'Account'
-  return 'Overview'
+  // Home, the bet builder, and anything else week-scoped show the current
+  // round's title — or the previous round's, since that's still the latest
+  // one on record until a new week is created.
+  return weekTitle.value || 'Overview'
+})
+
+const pageMeta = computed(() => {
+  if (route.path === '/live') return `${liveCount.value} LIVE · ${upcomingCount.value} UPCOMING`
+  if (route.path === '/history') return `${totalWeeksRecorded.value} WEEKS RECORDED`
+  if (route.path === '/league') return `${playerCount.value} PLAYERS`
+  if (route.path === '/admin') return 'ADMIN TOOLS'
+  if (route.path === '/account') return currentUserName.value.toUpperCase()
+  if (!weekNumber.value) return ''
+  if (isSettled.value) return `SETTLED · WEEK ${weekNumber.value}`
+  return isYourTurn.value ? `YOUR TURN · WEEK ${weekNumber.value}` : `WEEK ${weekNumber.value}`
 })
 </script>
 
 <template>
   <header class="topbar">
-    <div class="breadcrumbs">
-      <span>Premier League</span><b>/</b><strong>{{ pageTitle }}</strong>
+    <div class="topbar-mark" aria-hidden="true" />
+    <div class="topbar-titles">
+      <strong>{{ pageTitle }}</strong>
+      <small v-if="pageMeta">{{ pageMeta }}</small>
     </div>
-    <div class="top-actions">
-      <span class="sync-status"><i class="live-dot" />Shared league</span
-      ><NuxtLink class="avatar purple" to="/account" aria-label="Open account">ME</NuxtLink>
-    </div>
+    <button v-if="liveCount > 0" type="button" class="live-pill" @click="navigateTo('/live')">
+      <span class="live-dot" />{{ liveCount }} LIVE
+    </button>
+    <NuxtLink class="avatar" to="/account" aria-label="Open account">{{
+      initials(currentUserName)
+    }}</NuxtLink>
   </header>
 </template>

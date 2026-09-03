@@ -1,19 +1,20 @@
 <script setup>
 const route = useRoute()
-const { isAdmin } = usePlayerContext()
-const manageActive = computed(() => route.path === '/admin' || route.path === '/challenges')
 </script>
 
 <template>
   <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
     <NuxtLink to="/" exact-active-class="active"
-      ><span class="mobile-nav-icon">⌂</span><span>Home</span></NuxtLink
+      ><span class="mobile-nav-icon" /><span>Home</span></NuxtLink
     >
-    <NuxtLink v-if="isAdmin" to="/admin" :class="{ active: manageActive }"
-      ><span class="mobile-nav-icon">＋</span><span>Manage</span></NuxtLink
+    <NuxtLink to="/live" :class="{ active: route.path === '/live' }"
+      ><span class="mobile-nav-icon icon-live" /><span>Live</span></NuxtLink
     >
-    <NuxtLink to="/account" exact-active-class="active"
-      ><span class="mobile-nav-icon">●</span><span>Account</span></NuxtLink
+    <NuxtLink to="/history" :class="{ active: route.path === '/history' }"
+      ><span class="mobile-nav-icon icon-history" /><span>History</span></NuxtLink
+    >
+    <NuxtLink to="/league" :class="{ active: route.path === '/league' }"
+      ><span class="mobile-nav-icon icon-table" /><span>Table</span></NuxtLink
     >
   </nav>
 </template>

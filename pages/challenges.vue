@@ -12,6 +12,11 @@ const {
   loading,
   lastError
 } = useChallengeData()
+// This page manages weeks directly through useChallengeData rather than the
+// shared useDashboard() state that Home/TopBar/League/Manage read from, so
+// every mutation here also has to refresh that shared state — otherwise it
+// stays stale until a hard reload.
+const dashboard = reactive(useDashboard())
 const rounds = ref([])
 const assignableUsers = ref([])
 const creating = ref(false)
@@ -22,6 +27,7 @@ const money = (value) => `€ ${Number(value || 0).toFixed(2)}`
 const refresh = async () => {
   rounds.value = await loadRounds()
   assignableUsers.value = await loadAssignableUsers()
+  await dashboard.loadDashboard()
 }
 async function save(item, changes) {
   const ok = await updateWeek(item.id, changes)

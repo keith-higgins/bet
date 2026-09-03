@@ -1,48 +1,44 @@
 <template>
-  <main class="auth-page">
-    <div class="auth-card">
-      <div class="brand auth-brand">
-        <div class="brand-mark"><span /><span /></div>
-        <div>
-          <strong>the<span>weekly punt</span></strong
-          ><small>Premier League betting league</small>
-        </div>
-      </div>
-      <p class="overline">PRIVATE CHALLENGE</p>
-      <h1>{{ mode === 'login' ? 'Welcome back' : 'Create your account' }}</h1>
-      <p>
-        {{
-          mode === 'login'
-            ? 'Sign in to see the shared Premier League game.'
-            : 'Create an account to join the weekly game.'
-        }}
-      </p>
-      <form @submit.prevent="submit">
-        <label
-          >Email address<input
-            v-model="email"
-            type="email"
-            placeholder="you@example.com"
-            required /></label
-        ><label
-          >Password<input
-            v-model="password"
-            type="password"
-            placeholder="At least 6 characters"
-            minlength="6"
-            required /></label
-        ><button class="primary-button full-width" :disabled="loading">
-          <LoadingSpinner v-if="loading" label="Working…" inline small />
-          <template v-else>{{ mode === 'login' ? 'Log in →' : 'Create account →' }}</template>
-        </button>
-        <p v-if="message" class="auth-success">{{ message }}</p>
-        <p v-if="error" class="auth-error">{{ error }}</p>
-      </form>
-      <button class="switch-auth" @click="toggleMode">
-        {{
-          mode === 'login' ? 'Need an account? Create one' : 'Already have an account? Log in'
-        }}</button
-      ><NuxtLink to="/">Continue to dashboard</NuxtLink>
+  <main class="login-screen">
+    <div class="login-brand">
+      <div class="topbar-mark" />
+      <strong>the weekly punt</strong>
+    </div>
+    <p class="login-overline">PRIVATE LEAGUE</p>
+    <h1 class="login-headline">One bettor.<br />One bet.<br />Every week.</h1>
+    <p class="login-subcopy">
+      {{
+        mode === 'login'
+          ? "Sign in to see whose turn it is and how badly it's going."
+          : 'Create an account to join the weekly game.'
+      }}
+    </p>
+    <form class="login-form" @submit.prevent="submit">
+      <label class="login-field"
+        >EMAIL<input v-model="email" type="email" placeholder="you@example.com" required
+      /></label>
+      <label class="login-field"
+        >PASSWORD<input
+          v-model="password"
+          type="password"
+          placeholder="At least 6 characters"
+          minlength="6"
+          required
+      /></label>
+      <p v-if="message" class="builder-hint" style="color: var(--lime)">{{ message }}</p>
+      <p v-if="error" class="builder-error">{{ error }}</p>
+      <button class="hero-button login-submit" :disabled="loading">
+        <LoadingSpinner v-if="loading" label="Working…" inline small />
+        <template v-else>{{ mode === 'login' ? 'Log in' : 'Create account' }}</template>
+      </button>
+    </form>
+    <button class="login-switch" @click="toggleMode">
+      {{ mode === 'login' ? 'Need an account? Create one' : 'Already have an account? Log in' }}
+    </button>
+    <NuxtLink class="login-switch" to="/">Continue to dashboard</NuxtLink>
+    <div class="login-spacer" />
+    <div class="login-footer">
+      <span class="login-footer-dot" />SHARED LEAGUE &middot; PREMIER LEAGUE 25/26
     </div>
   </main>
 </template>

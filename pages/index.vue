@@ -1,103 +1,87 @@
 <script setup>
 const dashboard = reactive(useDashboard())
-const betFlowOpen = ref(false)
 const settlementOpen = ref(false)
-const newRoundOpen = ref(false)
-
-onMounted(dashboard.loadDashboard)
-
-async function saveBet(payload) {
-  const saved = await dashboard.saveBet(payload)
-  if (saved) betFlowOpen.value = false
-}
 
 async function saveSettlement(statuses) {
   const saved = await dashboard.settleBet(statuses)
   if (saved) settlementOpen.value = false
 }
-
-async function saveNewRound(details) {
-  const created = await dashboard.addNewWeek(details)
-  if (created) newRoundOpen.value = false
-}
 </script>
 
 <template>
-  <div>
-    <div class="page-wrap">
-      <DashboardHeader
-        :has-bet="dashboard.bet.selections.length > 0"
-        :can-edit="dashboard.canManageCurrentBet"
-        :can-manage="dashboard.isAdmin"
-        :display-name="dashboard.currentUserName"
+  <div class="screen-pad">
+    <LoadingSpinner v-if="dashboard.loading && !dashboard.round.id" label="Loading dashboard…" />
+    <template v-else>
+      <div v-if="!dashboard.databaseEnabled" class="local-mode-banner">
+        <span>Local preview mode</span
+        ><small>Connect Supabase to sync the league across devices.</small>
+      </div>
+
+      <TurnHeroCard
         :round="dashboard.round"
-        @add-bet="betFlowOpen = true"
-        @new-round="newRoundOpen = true"
+        :bet="dashboard.bet"
+        :can-edit="dashboard.canManageCurrentBet"
+        :is-admin="dashboard.isAdmin"
+        :database-enabled="dashboard.databaseEnabled"
+        :money="dashboard.money"
+        @edit="navigateTo('/bet')"
       />
-      <StatsSummary
+
+      <RecordCard
+        :personal-record="dashboard.personalRecord"
         :personal-profit-loss="dashboard.personalProfitLoss"
         :personal-best-return="dashboard.personalBestReturn"
-        :personal-record="dashboard.personalRecord"
-        :loading="dashboard.loading && !dashboard.round.id"
+        :personal-staked="dashboard.personalStaked"
+        :personal-form="dashboard.personalForm"
+        :table-position="dashboard.personalTablePosition"
         :money="dashboard.money"
       />
-      <LoadingSpinner v-if="dashboard.loading && !dashboard.round.id" label="Loading dashboard…" />
-      <template v-else>
-        <LiveScoresCard :matches="dashboard.trackedMatches" />
-        <div v-if="!dashboard.databaseEnabled" class="local-mode-banner">
-          <span>Local preview mode</span
-          ><small>Connect Supabase to sync the league across devices.</small>
-        </div>
-        <section class="content-grid">
-          <div class="left-column">
-            <CurrentRoundCard
-              :round="dashboard.round"
-              :bet="dashboard.bet"
-              :legs="dashboard.legs"
-              :settled="dashboard.settled"
-              :money="dashboard.money"
-              @edit="betFlowOpen = true"
-              @settle="settlementOpen = true"
-            />
-          </div>
-          <div class="right-column dashboard-sidebar">
-            <LeaderboardCard :leaders="dashboard.leaders" :money="dashboard.money" />
-            <RecentWeeks
-              :rounds="dashboard.previousRounds"
-              :current-round="dashboard.round"
-              :current-bet="dashboard.bet"
-              :settled="dashboard.settled"
-              :money="dashboard.money"
-            />
-          </div>
-        </section>
-      </template>
-    </div>
 
-    <BetEntryFlow
-      :open="betFlowOpen"
-      :initial-stake="dashboard.stake"
-      :initial-legs="dashboard.legs"
-      :loading="dashboard.loading"
-      :money="dashboard.money"
-      @close="betFlowOpen = false"
-      @save="saveBet"
-    />
+      <AccumulatorCard
+        :bet="dashboard.bet"
+        :legs="dashboard.legs"
+        :combined-odds="dashboard.combinedOdds"
+        :potential-return="dashboard.potentialReturn"
+        :can-edit="dashboard.canManageCurrentBet"
+        :money="dashboard.money"
+        @edit="navigateTo('/bet')"
+      />
+      <button
+        v-if="dashboard.canManageCurrentBet && dashboard.bet.selections.length"
+        class="link-button settle-link"
+        type="button"
+        @click="settlementOpen = true"
+      >
+        {{ dashboard.settled ? 'Override settlement' : 'Settle this bet' }} &rarr;
+      </button>
+
+      <section v-if="dashboard.trackedMatches.length">
+        <div class="mini-heading">
+          <h3>Match centre</h3>
+          <button class="link-button" type="button" @click="navigateTo('/live')">
+            All matches &rarr;
+          </button>
+        </div>
+        <LiveScoresCard :matches="dashboard.trackedMatches" :limit="2" />
+      </section>
+
+      <section>
+        <div class="mini-heading">
+          <h3>League</h3>
+          <button class="link-button" type="button" @click="navigateTo('/league')">
+            Full table &rarr;
+          </button>
+        </div>
+        <LeaderboardCard :leaders="dashboard.leaders" :limit="3" :money="dashboard.money" />
+      </section>
+    </template>
+
     <SettlementFlow
       :open="settlementOpen"
       :legs="dashboard.legs"
       :loading="dashboard.loading"
       @close="settlementOpen = false"
       @save="saveSettlement"
-    />
-    <NewRoundFlow
-      :open="newRoundOpen"
-      :loading="dashboard.loading"
-      :members="dashboard.players"
-      :users="dashboard.assignableUsers"
-      :default-bettor-id="dashboard.nextBettorId"
-      @close="newRoundOpen = false"
-      @save="saveNewRound"
     />
     <ToastMessage :message="dashboard.toast" />
   </div>
