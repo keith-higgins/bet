@@ -42,6 +42,7 @@ export default defineNuxtConfig({
     paddyPowerPageUrl: process.env.PADDY_POWER_PAGE_URL || '',
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     syncSecret: process.env.SYNC_SECRET || '',
+    geminiApiKey: process.env.GEMINI_API_KEY || '',
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || ''

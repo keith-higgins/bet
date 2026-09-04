@@ -13,6 +13,19 @@ const step = ref(1)
 const draftStake = ref(20)
 const draftLegs = ref([])
 const error = ref('')
+const entryMode = ref('upload')
+
+function applyParsedSlip(result) {
+  if (result.stake) draftStake.value = result.stake
+  draftLegs.value = result.legs.map((leg) => ({
+    match: leg.match,
+    market: leg.market,
+    pick: leg.pick,
+    odds: leg.odds,
+    status: 'pending'
+  }))
+  entryMode.value = 'manual'
+}
 const combinedOdds = computed(() =>
   draftLegs.value.reduce((total, leg) => total * (fractionalToDecimal(leg.odds) || 1), 1)
 )
@@ -26,6 +39,7 @@ function reset() {
     : [{ match: '', market: 'Match result', pick: '', odds: '1/2', status: 'pending' }]
   step.value = 1
   error.value = ''
+  entryMode.value = 'upload'
 }
 watch(
   () => props.open,
@@ -116,7 +130,26 @@ function save() {
           ><p class="flow-intro">
             Add one or more selections. You can edit them later from the round card.
           </p>
-          <BetLegEditor v-model:legs="draftLegs" @add="addLeg" @remove="removeLeg"
+          <div class="entry-mode-toggle">
+            <button
+              type="button"
+              class="text-button"
+              :class="{ active: entryMode === 'upload' }"
+              @click="entryMode = 'upload'"
+            >
+              Upload slip
+            </button>
+            <button
+              type="button"
+              class="text-button"
+              :class="{ active: entryMode === 'manual' }"
+              @click="entryMode = 'manual'"
+            >
+              Enter manually
+            </button>
+          </div>
+          <BetSlipUpload v-if="entryMode === 'upload'" @parsed="applyParsedSlip" />
+          <BetLegEditor v-else v-model:legs="draftLegs" @add="addLeg" @remove="removeLeg"
         /></template>
         <template v-else-if="step === 3"
           ><p class="flow-intro">Check your selections before saving the bet.</p>

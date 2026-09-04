@@ -12,6 +12,7 @@ const draftLegs = ref([])
 const openLeg = ref(0)
 const error = ref('')
 const saving = ref(false)
+const entryMode = ref(dashboard.legs.length ? 'manual' : 'upload')
 
 function blankLeg() {
   return { match: '', market: '', pick: '', odds: '', status: 'pending' }
@@ -24,6 +25,19 @@ watchEffect(() => {
     ? dashboard.legs.map((leg) => ({ ...leg, odds: decimalToFractional(leg.odds) }))
     : [blankLeg()]
 })
+
+function applyParsedSlip(result) {
+  if (result.stake) draftStake.value = result.stake
+  draftLegs.value = result.legs.map((leg) => ({
+    match: leg.match,
+    market: leg.market,
+    pick: leg.pick,
+    odds: leg.odds,
+    status: 'pending'
+  }))
+  openLeg.value = -1
+  entryMode.value = 'manual'
+}
 
 const combinedOdds = computed(() =>
   draftLegs.value.reduce((total, leg) => total * (fractionalToDecimal(leg.odds) || 1), 1)
@@ -118,20 +132,41 @@ async function save() {
       <h3>Legs</h3>
       <span class="mono-meta">TAP TO EDIT</span>
     </div>
-    <div class="builder-legs">
-      <BetBuilderLeg
-        v-for="(leg, index) in draftLegs"
-        :key="index"
-        :leg="leg"
-        :index="index"
-        :open="openLeg === index"
-        :can-remove="draftLegs.length > 1"
-        @toggle="toggleLeg(index)"
-        @update="updateLeg(index, $event)"
-        @remove="removeLeg(index)"
-      />
+    <div class="entry-mode-toggle">
+      <button
+        type="button"
+        class="text-button"
+        :class="{ active: entryMode === 'upload' }"
+        @click="entryMode = 'upload'"
+      >
+        Upload slip
+      </button>
+      <button
+        type="button"
+        class="text-button"
+        :class="{ active: entryMode === 'manual' }"
+        @click="entryMode = 'manual'"
+      >
+        Enter manually
+      </button>
     </div>
-    <button type="button" class="builder-add-leg" @click="addLeg">&#65291; Add another leg</button>
+    <BetSlipUpload v-if="entryMode === 'upload'" @parsed="applyParsedSlip" />
+    <template v-else>
+      <div class="builder-legs">
+        <BetBuilderLeg
+          v-for="(leg, index) in draftLegs"
+          :key="index"
+          :leg="leg"
+          :index="index"
+          :open="openLeg === index"
+          :can-remove="draftLegs.length > 1"
+          @toggle="toggleLeg(index)"
+          @update="updateLeg(index, $event)"
+          @remove="removeLeg(index)"
+        />
+      </div>
+      <button type="button" class="builder-add-leg" @click="addLeg">&#65291; Add another leg</button>
+    </template>
 
     <p v-if="error" class="builder-error" role="alert">{{ error }}</p>
 
