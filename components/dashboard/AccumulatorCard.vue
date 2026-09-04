@@ -7,17 +7,22 @@ const props = defineProps({
   combinedOdds: { type: Number, default: 1 },
   potentialReturn: { type: Number, default: 0 },
   canEdit: Boolean,
+  currentUserId: { type: String, default: '' },
   money: { type: Function, required: true }
 })
 defineEmits(['edit'])
 
 const hasLegs = computed(() => props.bet.selections.length > 0)
+const heading = computed(() => {
+  const isOwn = !props.currentUserId || props.bet.bettorId === props.currentUserId
+  return isOwn ? 'Your accumulator' : `${props.bet.bettor || 'Player'}'s accumulator`
+})
 </script>
 
 <template>
   <section>
     <div class="mini-heading">
-      <h3>Your accumulator</h3>
+      <h3>{{ heading }}</h3>
       <span class="mono-meta"
         >{{ bet.selections.length }} LEG{{ bet.selections.length === 1 ? '' : 'S' }}</span
       >

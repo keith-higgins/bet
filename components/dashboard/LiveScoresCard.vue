@@ -95,7 +95,10 @@ watch(
           <span class="match-preview-score">{{ scoreLine(match) }}</span>
         </div>
         <div class="match-detailed-foot">
-          <span v-if="match.pick" class="match-pick">Pick: {{ match.pick }}</span>
+          <span v-if="match.pick" class="match-pick"
+            ><template v-if="match.market">{{ match.market }} &middot; </template>Pick:
+            {{ match.pick }}</span
+          >
           <span v-else class="match-pick">&nbsp;</span>
           <span class="status-pill" :class="pickStatus(match).tone">{{
             pickStatus(match).label
@@ -105,7 +108,10 @@ watch(
       <template v-else>
         <div class="match-preview-main">
           <strong>{{ match.home }} v {{ match.away }}</strong>
-          <small>{{ stateLine(match) }}</small>
+          <small
+            ><template v-if="match.market">{{ match.market }} &middot; </template
+            >{{ stateLine(match) }}</small
+          >
         </div>
         <span class="match-preview-score">{{ scoreLine(match) }}</span>
       </template>

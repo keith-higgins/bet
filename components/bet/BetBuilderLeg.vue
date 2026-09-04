@@ -1,14 +1,15 @@
 <script setup>
 import { fractionalToDecimal } from '~/lib/odds'
 import { BET_MARKETS, getMarketPickOptions, paddyPowerOddsToFractional } from '~/lib/betting'
-import { teamNamesMatch } from '~/lib/teamAliases'
+import { teamNamesMatch, canonicalTeamName } from '~/lib/teamAliases'
 import { groupMarketsByCategory } from '~/lib/marketCategories'
 
 const props = defineProps({
   leg: { type: Object, required: true },
   index: { type: Number, required: true },
   open: Boolean,
-  canRemove: Boolean
+  canRemove: Boolean,
+  liveStatus: { type: String, default: '' }
 })
 const emit = defineEmits(['toggle', 'update', 'remove'])
 
@@ -75,7 +76,9 @@ function toggleSource() {
 
 async function resolveLiveTracking(match) {
   try {
-    const response = await $fetch('/api/football/fixtures', { query: { q: match.home } })
+    const response = await $fetch('/api/football/fixtures', {
+      query: { q: canonicalTeamName(match.home) }
+    })
     const fixtures = response.fixtures || []
     const matchStart = match.startsAt ? new Date(match.startsAt).getTime() : NaN
     const found = fixtures.find((fixture) => {
@@ -201,6 +204,8 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           >{{ leg.market }} <template v-if="leg.pick">&middot; {{ leg.pick }}</template></span
         >
       </span>
+      <span v-if="leg.matchId" class="leg-live-badge linked">&#9679; Live tracked</span>
+      <span v-else-if="liveStatus === 'not-found'" class="leg-live-badge unlinked">No live match found</span>
       <span class="builder-leg-odds">{{ leg.odds }}</span>
     </button>
 
@@ -211,6 +216,10 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
         placeholder="Match, e.g. Arsenal v Chelsea"
         @input="handleMatchInput($event.target.value)"
       />
+      <p v-if="leg.matchId" class="builder-hint leg-live-hint">&#9679; Linked to live scores</p>
+      <p v-else-if="liveStatus === 'not-found'" class="builder-error">
+        Couldn't auto-link this match to live scores &mdash; search and reselect it below.
+      </p>
       <p v-if="searching" class="builder-hint">Searching fixtures&hellip;</p>
       <p v-else-if="searchError" class="builder-error">{{ searchError }}</p>
       <div v-if="results.length" class="builder-suggestions">

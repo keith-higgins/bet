@@ -2,6 +2,11 @@
 const dashboard = reactive(useDashboard())
 const settlementOpen = ref(false)
 
+// AppShell only loads the dashboard once, on initial app boot — landing back
+// here after saving a bet (a soft client-side navigation) doesn't re-trigger
+// that, so refresh explicitly to pick up whatever was just saved.
+onMounted(dashboard.loadDashboard)
+
 async function saveSettlement(statuses) {
   const saved = await dashboard.settleBet(statuses)
   if (saved) settlementOpen.value = false
@@ -43,6 +48,7 @@ async function saveSettlement(statuses) {
         :combined-odds="dashboard.combinedOdds"
         :potential-return="dashboard.potentialReturn"
         :can-edit="dashboard.canManageCurrentBet"
+        :current-user-id="dashboard.currentUserId"
         :money="dashboard.money"
         @edit="navigateTo('/bet')"
       />

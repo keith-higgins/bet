@@ -1,6 +1,12 @@
 import { isValidFractionalOdds } from '~/lib/odds.js'
-import { paddyPowerOddsToFractional } from '~/lib/betting.js'
+import {
+  paddyPowerOddsToFractional,
+  getMatchTeams,
+  resolveMarketDatabaseValue,
+  MARKET_UI_VALUES
+} from '~/lib/betting.js'
 
+// Accuracy matters more than cost here — try the fuller model first, fall back to lite.
 const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest']
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
@@ -45,39 +51,61 @@ const RESPONSE_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          home: { type: 'string' },
-          away: { type: 'string' },
+          match: { type: 'string' },
+          startsAt: { type: 'string', nullable: true },
           market: { type: 'string' },
           pick: { type: 'string' },
           odds: { type: 'string' }
         },
-        required: ['market', 'pick', 'odds']
+        required: ['match', 'market', 'pick', 'odds']
       }
     }
   },
   required: ['legs']
 }
 
-const PROMPT = `You are reading a screenshot of a football accumulator bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet).
+function buildPrompt() {
+  const today = new Date().toISOString().slice(0, 10)
+  return `You are reading a screenshot of a football accumulator bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet). Today's date is ${today} — resolve any relative dates on the slip ("Today", "Tomorrow") against that.
 
 This is a multi-selection accumulator. Before answering, scan the ENTIRE image from top to bottom and count how many separate selections are listed — accumulators commonly have 2 to 10+ legs, each in its own row or card, each with its own match and odds. Do not stop after the first selection. If the slip header states a fold count (e.g. "5 Fold Acca", "6 Selections"), your legs array MUST contain exactly that many entries — treat a mismatch as a sign you missed one and re-scan.
 
+Each selection card has THREE separate pieces of text, stacked vertically — do not confuse them:
+1. The pick/selection (top line, bold) — could be a team name, "Yes"/"No", "Draw", "Over 2.5", etc.
+2. The market name and the two teams playing (next line down) — formatted as "Market Name - Team A v Team B", e.g. "Match Odds - Newcastle v Bournemouth" or "Both Teams To Score - Ipswich v Liverpool". The "Team A v Team B" part after the market name is what you need for "match" — it is ALWAYS two teams, even when line 1's pick is only one team's name or is "Yes"/"Draw"/etc.
+3. The kickoff date/time (line below that).
+
+Worked example — if a card reads exactly:
+  Newcastle                                21/20
+  Match Odds - Newcastle v Bournemouth
+  13:30 Tomorrow
+then you must output: {"match": "Newcastle v Bournemouth", "startsAt": "<tomorrow's date>T13:30:00", "market": "Match Odds", "pick": "Newcastle", "odds": "21/20"} — note "match" has BOTH teams even though "pick" only names one.
+
 For each selection return:
-- home: the home team name, copied exactly as printed on the slip — nothing added, nothing paraphrased, no extra words. Empty string if not determinable.
-- away: the away team name, copied exactly as printed on the slip — nothing added, nothing paraphrased, no extra words. Empty string if not determinable.
+- match: the two teams from line 2, copied EXACTLY as printed in "Home Team v Away Team" order (left team is home, right team is away), including any abbreviations (e.g. "Paris St-G" stays "Paris St-G", don't expand it). This is ALWAYS a two-team pairing — if you only found one team name, look again, you are reading the wrong line.
+- startsAt: the kickoff date and time shown for this match, as an ISO 8601 string ("YYYY-MM-DDTHH:mm:00"), using the exact date and 24-hour time printed on the slip. Null if no date/time is visible.
 - market: the betting market as shown (e.g. "Match result", "Both teams to score", "Total goals", "Correct score")
 - pick: the exact selection text as shown (e.g. a team name, "Draw", "Over 2.5", "Yes")
 - odds: the odds for that selection EXACTLY as displayed on the slip, character for character (e.g. "8/13" or "1.79/1" if shown as a fraction — note the numerator is sometimes a decimal like "1.79", copy it as-is — or "1.62" if shown as a decimal). Do not convert, simplify, or round it yourself — copy the displayed value verbatim.
 Also extract the total stake amount as a number if visible, in "stake" (null if not visible).
 Only include actual bet selections, ignore navigation chrome, balances, and promo banners.`
+}
 
 function toLeg(raw) {
   const oddsFractional = paddyPowerOddsToFractional(raw.odds)
+  const match = String(raw.match || '').trim()
+  const { home, away } = getMatchTeams({ match })
+  const rawMarket = String(raw.market || '').trim()
+  // Snap onto the app's canonical market label (e.g. "Both teams to score") whenever
+  // this market maps onto one of our settlement categories, so the market/pick pill
+  // chips — which only recognise those exact labels — highlight correctly.
+  const canonicalMarket = MARKET_UI_VALUES[resolveMarketDatabaseValue(rawMarket)]
   return {
-    match: [raw.home, raw.away].filter(Boolean).join(' v '),
-    home: raw.home || '',
-    away: raw.away || '',
-    market: String(raw.market || '').trim(),
+    match,
+    home,
+    away,
+    startsAt: raw.startsAt || '',
+    market: canonicalMarket || rawMarket,
     pick: String(raw.pick || '').trim(),
     odds: isValidFractionalOdds(oddsFractional) ? oddsFractional : '1/2',
     status: 'pending'
@@ -104,7 +132,10 @@ export default defineEventHandler(async (event) => {
     contents: [
       {
         role: 'user',
-        parts: [{ text: PROMPT }, { inlineData: { mimeType, data: file.data.toString('base64') } }]
+        parts: [
+          { text: buildPrompt() },
+          { inlineData: { mimeType, data: file.data.toString('base64') } }
+        ]
       }
     ],
     generationConfig: {
@@ -128,7 +159,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 502, statusMessage: "Couldn't read that slip. Try a clearer screenshot or enter it manually." })
   }
 
-  const legs = Array.isArray(parsed.legs) ? parsed.legs.map(toLeg).filter((leg) => leg.market && leg.pick) : []
+  const legs = Array.isArray(parsed.legs)
+    ? parsed.legs.map(toLeg).filter((leg) => leg.match && leg.market && leg.pick)
+    : []
   if (!legs.length) {
     throw createError({ statusCode: 422, statusMessage: "Couldn't find any selections on that slip. Try a clearer screenshot or enter it manually." })
   }

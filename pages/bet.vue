@@ -1,5 +1,7 @@
 <script setup>
 import { decimalToFractional, fractionalToDecimal, isValidFractionalOdds } from '~/lib/odds'
+import { teamNamesMatch, normalizeTeamName, canonicalTeamName } from '~/lib/teamAliases'
+import { paddyPowerOddsToFractional, resolveMarketDatabaseValue } from '~/lib/betting'
 
 const dashboard = reactive(useDashboard())
 
@@ -13,6 +15,7 @@ const openLeg = ref(0)
 const error = ref('')
 const saving = ref(false)
 const entryMode = ref(dashboard.legs.length ? 'manual' : 'upload')
+const liveStatus = ref({})
 
 function blankLeg() {
   return { match: '', market: '', pick: '', odds: '', status: 'pending' }
@@ -26,6 +29,99 @@ watchEffect(() => {
     : [blankLeg()]
 })
 
+async function resolveLiveTracking(index, leg) {
+  if (!leg.home || !leg.away) {
+    liveStatus.value = { ...liveStatus.value, [index]: 'not-found' }
+    return
+  }
+  try {
+    // The football provider's search is picky about short/abbreviated names (e.g.
+    // "Newcastle" alone matches an unrelated Australian club) — search on the fuller
+    // canonical name from our alias table instead of the raw slip text.
+    const response = await $fetch('/api/football/fixtures', {
+      query: { q: canonicalTeamName(leg.home) }
+    })
+    const fixtures = response.fixtures || []
+    const matchStart = leg.startsAt ? new Date(leg.startsAt).getTime() : NaN
+    const found = fixtures.find((fixture) => {
+      const withinWindow =
+        Number.isNaN(matchStart) ||
+        !fixture.startsAt ||
+        Math.abs(new Date(fixture.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
+      return (
+        withinWindow &&
+        teamNamesMatch(fixture.home, leg.home) &&
+        teamNamesMatch(fixture.away, leg.away)
+      )
+    })
+    if (found && draftLegs.value[index]?.match === leg.match) {
+      draftLegs.value = draftLegs.value.map((item, i) =>
+        i === index ? { ...item, matchId: found.id, provider: found.provider } : item
+      )
+      liveStatus.value = { ...liveStatus.value, [index]: 'linked' }
+    } else {
+      liveStatus.value = { ...liveStatus.value, [index]: 'not-found' }
+    }
+  } catch {
+    liveStatus.value = { ...liveStatus.value, [index]: 'not-found' }
+  }
+}
+
+// Snaps an OCR'd market/pick onto Paddy Power's current odds when we can find the
+// same fixture there — this fixes up settlement categorization (which relies on PP's
+// exact market labels) and replaces the slip's odds with live ones.
+async function resolvePaddyPowerMarket(index, leg) {
+  if (!leg.home || !leg.away) return
+  try {
+    const response = await $fetch('/api/paddypower/search', { query: { q: leg.home } })
+    const matches = response.matches || []
+    const matchStart = leg.startsAt ? new Date(leg.startsAt).getTime() : NaN
+    const found = matches.find((item) => {
+      const withinWindow =
+        Number.isNaN(matchStart) ||
+        !item.startsAt ||
+        Math.abs(new Date(item.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
+      return (
+        withinWindow && teamNamesMatch(item.home, leg.home) && teamNamesMatch(item.away, leg.away)
+      )
+    })
+    if (!found) return
+
+    const targetValue = resolveMarketDatabaseValue(leg.market)
+    const market = (found.markets || []).find(
+      (item) => resolveMarketDatabaseValue(item.name) === targetValue
+    )
+    if (!market) return
+
+    const normalizedPick = normalizeTeamName(leg.pick)
+    const selection = market.selections.find(
+      (item) => normalizeTeamName(item.name) === normalizedPick || teamNamesMatch(item.name, leg.pick)
+    )
+    if (!selection) return
+
+    const odds = paddyPowerOddsToFractional(selection.odds)
+    if (!isValidFractionalOdds(odds)) return
+
+    if (draftLegs.value[index]?.match === leg.match) {
+      draftLegs.value = draftLegs.value.map((item, i) =>
+        // Keep our already-canonicalized market label (matches the pill chip text) —
+        // only pick/odds/competition come from Paddy Power's live data.
+        i === index
+          ? {
+              ...item,
+              pick: selection.name,
+              odds,
+              competition: found.competition,
+              startsAt: found.startsAt
+            }
+          : item
+      )
+    }
+  } catch {
+    // Best-effort — the OCR'd market/pick/odds still work without a live match.
+  }
+}
+
 function applyParsedSlip(result) {
   if (result.stake) draftStake.value = result.stake
   draftLegs.value = result.legs.map((leg) => ({
@@ -37,6 +133,11 @@ function applyParsedSlip(result) {
   }))
   openLeg.value = -1
   entryMode.value = 'manual'
+  liveStatus.value = {}
+  result.legs.forEach((leg, index) => {
+    resolvePaddyPowerMarket(index, leg)
+    resolveLiveTracking(index, leg)
+  })
 }
 
 const combinedOdds = computed(() =>
@@ -51,6 +152,10 @@ function adjustStake(delta) {
 }
 
 function updateLeg(index, value) {
+  if (draftLegs.value[index]?.match !== value.match) {
+    const { [index]: _removed, ...rest } = liveStatus.value
+    liveStatus.value = rest
+  }
   draftLegs.value = draftLegs.value.map((leg, i) => (i === index ? value : leg))
 }
 
@@ -61,6 +166,7 @@ function addLeg() {
 
 function removeLeg(index) {
   draftLegs.value = draftLegs.value.filter((_, i) => i !== index)
+  liveStatus.value = {}
   openLeg.value = -1
 }
 
@@ -160,6 +266,7 @@ async function save() {
           :index="index"
           :open="openLeg === index"
           :can-remove="draftLegs.length > 1"
+          :live-status="liveStatus[index] || ''"
           @toggle="toggleLeg(index)"
           @update="updateLeg(index, $event)"
           @remove="removeLeg(index)"

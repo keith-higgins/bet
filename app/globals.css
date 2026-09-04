@@ -4614,6 +4614,22 @@ select option {
   color: var(--lime);
   flex: none;
 }
+.leg-live-badge {
+  flex: none;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.leg-live-badge.linked {
+  color: var(--lime);
+}
+.leg-live-badge.unlinked {
+  color: var(--muted);
+}
+.leg-live-hint {
+  color: var(--lime) !important;
+}
 .builder-leg-body {
   padding: 4px 15px 16px;
   border-top: 1px solid var(--line);
