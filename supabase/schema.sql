@@ -12,7 +12,6 @@ create table public.weeks (
   id uuid primary key default gen_random_uuid(),
   week integer not null,
   title text not null,
-  bettor_id uuid references auth.users not null,
   stake numeric(10,2) not null default 20,
   deadline timestamptz not null,
   status text not null default 'in_progress' check (status in ('in_progress', 'settled'))
@@ -27,8 +26,7 @@ create table public.bets (
   combined_odds numeric(8,2) not null,
   status text not null default 'pending',
   actual_return numeric(10,2),
-  created_at timestamptz not null default now(),
-  constraint bets_week_bettor_unique unique (week_id, bettor_id)
+  created_at timestamptz not null default now()
 );
 
 create table public.matches (
@@ -125,7 +123,6 @@ begin
   if not public.is_admin() and (
     new.week is distinct from old.week or
     new.title is distinct from old.title or
-    new.bettor_id is distinct from old.bettor_id or
     new.stake is distinct from old.stake or
     new.deadline is distinct from old.deadline
   ) then
@@ -159,10 +156,10 @@ create policy "admins can create weeks"
 on public.weeks for insert to authenticated
 with check (public.is_admin());
 
-create policy "admins or assigned bettors can update week status"
+create policy "admins can update week status"
 on public.weeks for update to authenticated
-using (public.is_admin() or bettor_id = auth.uid())
-with check (public.is_admin() or bettor_id = auth.uid());
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "admins can delete weeks"
 on public.weeks for delete to authenticated

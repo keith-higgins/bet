@@ -117,11 +117,24 @@ async function settleFinishedSelections(client, fixtures) {
       .update({ status, actual_return: actualReturn })
       .eq('id', betId)
     if (updateError) throw updateError
-    const { error: weekError } = await client
-      .from('weeks')
-      .update({ status: 'settled' })
-      .eq('id', bet.week_id)
-    if (weekError) throw weekError
+
+    // A week can hold bets from several players — only mark it settled once
+    // every bet in it has resolved, not just the one this loop just settled.
+    const { data: weekBets, error: weekBetsError } = await client
+      .from('bets')
+      .select('status')
+      .eq('week_id', bet.week_id)
+    if (weekBetsError) throw weekBetsError
+    const weekFullySettled = (weekBets || []).every((weekBet) =>
+      ['won', 'lost'].includes(weekBet.status)
+    )
+    if (weekFullySettled) {
+      const { error: weekError } = await client
+        .from('weeks')
+        .update({ status: 'settled' })
+        .eq('id', bet.week_id)
+      if (weekError) throw weekError
+    }
     settledBets += 1
   }
 

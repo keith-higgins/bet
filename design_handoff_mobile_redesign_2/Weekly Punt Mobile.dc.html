@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #EDEEF0; -webkit-font-smoothing: antialiased; }
+  a { color: #C6F24E; text-decoration: none; }
+  a:hover { color: #D8FF74; }
+  input, button, select { font: inherit; }
+  input::placeholder { color: #5C6472; }
+  [data-om-starter="ios-frame"] * { scrollbar-width: none; }
+  [data-om-starter="ios-frame"] *::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 40px 20px 60px; background: radial-gradient(120% 80% at 50% 0%, #F7F8F9 0%, #E4E6E9 100%); font-family: 'Instrument Sans', sans-serif;">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+
+<div class="pnt-scroll" style="min-height: 874px; overflow-x: hidden; background: #0C0E12; color: #F4F6F8; display: flex; flex-direction: column;">
+
+<!-- ══ LOGIN ══ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Login" style="flex: 1; display: flex; flex-direction: column; padding: 96px 26px 48px;">
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 64px;">
+    <div style="width: 26px; height: 26px; border-radius: 50%; background: #C6F24E;"></div>
+    <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -0.5px; text-transform: lowercase;">the weekly punt</div>
+  </div>
+  <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: #8A93A3; margin-bottom: 14px;">PRIVATE LEAGUE · 5 PLAYERS</div>
+  <h1 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 42px; line-height: 0.98; letter-spacing: -1.6px; margin: 0 0 14px;">One bettor.<br />One bet.<br />Every week.</h1>
+  <p style="margin: 0 0 40px; color: #8A93A3; font-size: 15px; line-height: 1.5; text-wrap: pretty;">Sign in to see whose turn it is and how badly it's going.</p>
+  <div style="display: grid; gap: 12px; margin-bottom: 20px;">
+    <label style="display: grid; gap: 8px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; color: #6F7887;">EMAIL
+      <input type="email" placeholder="you@example.com" style="width: 100%; box-sizing: border-box; min-height: 54px; padding: 0 16px; border: 1px solid #262B36; border-radius: 14px; background: #15181F; color: #F4F6F8; font-family: 'Instrument Sans', sans-serif; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+    </label>
+    <label style="display: grid; gap: 8px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; color: #6F7887;">PASSWORD
+      <input type="password" placeholder="At least 6 characters" style="width: 100%; box-sizing: border-box; min-height: 54px; padding: 0 16px; border: 1px solid #262B36; border-radius: 14px; background: #15181F; color: #F4F6F8; font-family: 'Instrument Sans', sans-serif; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+    </label>
+  </div>
+  <button type="button" onClick="{{ goHome }}" style="width: 100%; min-height: 56px; border: 0; border-radius: 14px; background: #C6F24E; color: #10140C; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -0.2px;" style-active="transform: scale(0.985);">Log in</button>
+  <button type="button" onClick="{{ goHome }}" style="margin-top: 18px; border: 0; background: none; color: #8A93A3; font-size: 13px; padding: 8px;">Need an account? Create one</button>
+  <div style="flex: 1; min-height: 30px;"></div>
+  <div style="display: flex; align-items: center; gap: 8px; color: #5C6472; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.8px;">
+    <span style="width: 6px; height: 6px; border-radius: 50%; background: #C6F24E;"></span>SHARED LEAGUE · PREMIER LEAGUE 25/26
+  </div>
+</div>
+</sc-if>
+
+<!-- ══ APP CHROME ══ -->
+<sc-if value="{{ inApp }}" hint-placeholder-val="{{ true }}">
+<div style="flex: 1; display: flex; flex-direction: column;">
+
+  <div style="position: sticky; top: 0; z-index: 30; padding: 58px 20px 12px; background: rgba(12,14,18,0.82); backdrop-filter: blur(18px); border-bottom: 1px solid #1B1F27; display: flex; align-items: center; gap: 12px;">
+    <div style="width: 20px; height: 20px; border-radius: 50%; background: #C6F24E; flex: none;"></div>
+    <div style="flex: 1; min-width: 0;">
+      <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.4px;">{{ headerTitle }}</div>
+      <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ headerMeta }}</div>
+    </div>
+    <button type="button" onClick="{{ goLive }}" style="border: 1px solid #3A2A2C; background: #1E1618; border-radius: 999px; height: 32px; padding: 0 11px; display: flex; align-items: center; gap: 6px; color: #FF9179; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.6px;">
+      <span style="width: 6px; height: 6px; border-radius: 50%; background: #FF7A5C; box-shadow: 0 0 0 3px rgba(255,122,92,0.18);"></span>2 LIVE
+    </button>
+    <button type="button" onClick="{{ goAccount }}" style="width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: #2A2F3A; color: #F4F6F8; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.5px;">DM</button>
+  </div>
+
+  <div style="flex: 1;">
+
+  <!-- ══ HOME · TURN-FIRST ══ -->
+  <sc-if value="{{ showTurnHome }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="Home — turn first" style="padding: 20px 20px 26px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px;">
+
+    <div style="border-radius: 22px; padding: 22px; background: linear-gradient(165deg, #C6F24E 0%, #A9DC33 100%); color: #10140C;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; opacity: 0.62;">WEEK 14 · YOUR TURN</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.2px; background: rgba(16,20,12,0.14); border-radius: 999px; padding: 5px 9px;">2d 04h LEFT</div>
+      </div>
+      <h2 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 30px; line-height: 1.02; letter-spacing: -1.2px; margin: 16px 0 6px;">You're on the hook</h2>
+      <sc-if value="{{ showBanter }}" hint-placeholder-val="{{ true }}">
+        <p style="margin: 0; font-size: 14px; line-height: 1.45; opacity: 0.72;">Fintan's four ahead. Do something about it.</p>
+      </sc-if>
+      <div style="display: flex; align-items: center; gap: 18px; margin: 22px 0 20px; padding-top: 18px; border-top: 1px solid rgba(16,20,12,0.16);">
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; opacity: 0.6;">STAKE / BET</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.6px; margin-top: 5px;">{{ stakeText }}</div>
+        </div>
+        <div style="width: 1px; height: 34px; background: rgba(16,20,12,0.16);"></div>
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; opacity: 0.6;">DEADLINE</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.6px; margin-top: 5px;">Sat 12:30</div>
+        </div>
+      </div>
+      <button type="button" onClick="{{ goBet }}" style="width: 100%; min-height: 52px; border: 0; border-radius: 14px; background: #10140C; color: #C6F24E; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px;" style-active="transform: scale(0.985);">Place a bet →</button>
+    </div>
+
+    <div style="border: 1px solid #1F242E; border-radius: 22px; background: #14171E; padding: 20px;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">YOUR RECORD · 13 WEEKS</div>
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 14px 0 2px;">
+        <div style="display: flex; align-items: flex-end; gap: 10px;">
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 46px; line-height: 0.88; letter-spacing: -2px;">4–3</div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #6F7887; padding-bottom: 7px; line-height: 1.5;">WKS WON<br />WKS LOST</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">NET PROFIT</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin-top: 6px; color: #C6F24E;">{{ plText }}</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 5px; margin: 20px 0 18px;">
+        <sc-for list="{{ formBars }}" as="b" hint-placeholder-count="8">
+          <span style="flex: 1; height: 30px; border-radius: 5px; background: {{ b.bg }};"></span>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid #1F242E;">
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">BEST WEEK</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; margin-top: 5px;">{{ bestText }}</div>
+        </div>
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">STAKED</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; margin-top: 5px;">€260.00</div>
+        </div>
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">TABLE</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; margin-top: 5px;">2nd of 5</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+        <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0;">This week's bets</h3>
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.1px; color: #6F7887;">{{ weekBetsLabel }}</span>
+      </div>
+      <div style="display: flex; gap: 12px; overflow-x: auto; max-width: 100%; scroll-snap-type: x mandatory; scroll-padding-left: 20px; overscroll-behavior-x: contain; margin: 0 -20px; padding: 2px 20px 6px;">
+        <sc-for list="{{ betCards }}" as="b" hint-placeholder-count="3">
+          <div style="scroll-snap-align: start; flex: none; width: 300px; box-sizing: border-box; border: 1px solid {{ b.border }}; border-radius: 20px; background: {{ b.cardBg }}; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ b.avatarBg }}; color: {{ b.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 10px;">{{ b.initials }}</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.owner }}</div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #6F7887; margin-top: 3px;">{{ b.tag }}</div>
+              </div>
+              <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.8px; border-radius: 999px; padding: 5px 9px; background: {{ b.pillBg }}; color: {{ b.pillInk }};">{{ b.status }}</span>
+            </div>
+            <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 16px 0 14px;">
+              <div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #6F7887;">ODDS</div>
+                <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.6px; margin-top: 5px;">{{ b.combo }}</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #6F7887;">{{ b.returnLabel }}</div>
+                <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.6px; margin-top: 5px; color: {{ b.returnInk }};">{{ b.ret }}</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <sc-for list="{{ b.pips }}" as="p" hint-placeholder-count="4">
+                <span style="flex: 1; height: 6px; border-radius: 3px; background: {{ p.bg }};"></span>
+              </sc-for>
+            </div>
+            <button type="button" onClick="{{ b.onOpen }}" style="width: 100%; min-height: 42px; margin-top: 15px; border: 1px solid {{ b.btnBorder }}; border-radius: 12px; background: {{ b.btnBg }}; color: {{ b.btnInk }}; font-size: 13px;">{{ b.action }}</button>
+          </div>
+        </sc-for>
+        <button type="button" onClick="{{ addBet }}" style="scroll-snap-align: start; flex: none; width: 124px; border: 1px dashed #2E3542; border-radius: 20px; background: none; color: #C6F24E; font-size: 13px; display: grid; place-items: center; align-content: center; gap: 8px; padding: 16px;">
+          <span style="font-size: 24px; line-height: 1;">＋</span>New bet
+        </button>
+      </div>
+      <p style="margin: 10px 0 0; font-size: 12px; color: #7B8493;">Swipe for the rest — {{ weekPotentialText }} riding on this week.</p>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+        <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0;">Match centre</h3>
+        <button type="button" onClick="{{ goLive }}" style="border: 0; background: none; color: #C6F24E; font-size: 12px; padding: 2px 0;">All matches →</button>
+      </div>
+      <div style="display: grid; gap: 8px;">
+        <sc-for list="{{ liveTop }}" as="m" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #1F242E; border-left: 3px solid {{ m.dot }}; border-radius: 16px; background: #14171E; padding: 13px 15px;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.match }}</div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 10px; color: #7B8493; margin-top: 5px; letter-spacing: 0.6px;">{{ m.state }}</div>
+            </div>
+            <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.5px;">{{ m.score }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+        <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0;">League</h3>
+        <button type="button" onClick="{{ goLeague }}" style="border: 0; background: none; color: #C6F24E; font-size: 12px; padding: 2px 0;">Full table →</button>
+      </div>
+      <div style="border: 1px solid #1F242E; border-radius: 20px; background: #14171E; overflow: hidden;">
+        <sc-for list="{{ leadersTop }}" as="p" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #1B1F27;">
+            <span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #6F7887; width: 12px;">{{ p.rank }}</span>
+            <span style="width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ p.avatarBg }}; color: {{ p.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 10px;">{{ p.initials }}</span>
+            <div style="flex: 1; min-width: 0; font-size: 13.5px; font-weight: 500;">{{ p.name }}</div>
+            <span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #6F7887;">{{ p.record }}</span>
+            <span style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 14px; width: 68px; text-align: right; color: {{ p.profitInk }};">{{ p.profit }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <!-- ══ HOME · MONEY-FIRST ══ -->
+  <sc-if value="{{ showMoneyHome }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Home — money first" style="padding: 20px 20px 26px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px;">
+
+    <div style="border: 1px solid #1F242E; border-radius: 22px; background: #14171E; padding: 22px;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">YOUR SEASON · 13 SETTLED</div>
+      <div style="display: flex; align-items: flex-end; gap: 12px; margin: 14px 0 4px;">
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 52px; line-height: 0.9; letter-spacing: -2.4px; color: #C6F24E;">{{ plText }}</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #6F7887; padding-bottom: 8px;">NET</div>
+      </div>
+      <sc-if value="{{ showBanter }}" hint-placeholder-val="{{ true }}">
+        <p style="margin: 10px 0 0; font-size: 14px; color: #8A93A3; line-height: 1.45;">Second place. Which is first place among the honest.</p>
+      </sc-if>
+      <div style="display: flex; gap: 5px; margin: 20px 0 18px;">
+        <sc-for list="{{ formBars }}" as="b" hint-placeholder-count="8">
+          <span style="flex: 1; height: 34px; border-radius: 5px; background: {{ b.bg }};"></span>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid #1F242E;">
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">STAKED</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; margin-top: 5px;">€260.00</div>
+        </div>
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">RETURNED</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; margin-top: 5px;">€420.00</div>
+        </div>
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">BEST</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; margin-top: 5px;">{{ bestText }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+        <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0;">The table</h3>
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #6F7887;">14 WEEKS IN</span>
+      </div>
+      <div style="display: grid; gap: 8px;">
+        <sc-for list="{{ leaders }}" as="p" hint-placeholder-count="5">
+          <div style="border: 1px solid #1F242E; border-radius: 16px; background: {{ p.rowBg }}; padding: 13px 15px;">
+            <div style="display: flex; align-items: center; gap: 11px;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #6F7887; width: 12px;">{{ p.rank }}</span>
+              <span style="width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ p.avatarBg }}; color: {{ p.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 10px;">{{ p.initials }}</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 13.5px; font-weight: 500;">{{ p.name }}</div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 10px; color: #7B8493; margin-top: 4px;">{{ p.record }} · {{ p.note }}</div>
+              </div>
+              <span style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 16px; color: {{ p.profitInk }};">{{ p.profit }}</span>
+            </div>
+            <div style="height: 4px; border-radius: 4px; background: #1F242E; margin-top: 12px; overflow: hidden;">
+              <span style="display: block; height: 100%; border-radius: 4px; width: {{ p.bar }}; background: {{ p.profitInk }};"></span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="border-radius: 20px; padding: 18px; background: #C6F24E; color: #10140C; display: flex; align-items: center; gap: 14px;">
+      <div style="flex: 1;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; opacity: 0.6;">WEEK 14 · YOUR TURN</div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.7px; margin-top: 7px;">{{ weekBetsShort }} · {{ weekPotentialText }} up</div>
+        <div style="font-size: 12.5px; opacity: 0.7; margin-top: 5px;">Deadline Sat 12:30</div>
+      </div>
+      <button type="button" onClick="{{ goBet }}" style="border: 0; border-radius: 12px; min-height: 46px; padding: 0 16px; background: #10140C; color: #C6F24E; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 14px;">Edit</button>
+    </div>
+
+    <div>
+      <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0 0 12px;">Live now</h3>
+      <div style="display: grid; gap: 8px;">
+        <sc-for list="{{ liveTop }}" as="m" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #1F242E; border-left: 3px solid {{ m.dot }}; border-radius: 16px; background: #14171E; padding: 13px 15px;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.match }}</div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 10px; color: #7B8493; margin-top: 5px; letter-spacing: 0.6px;">{{ m.state }}</div>
+            </div>
+            <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.5px;">{{ m.score }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <!-- ══ BET BUILDER ══ -->
+  <sc-if value="{{ isBet }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Bet builder" style="padding: 18px 20px 26px; min-width: 0; overflow-x: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">{{ betMeta }}</div>
+        <h2 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin: 9px 0 0;">Build a bet</h2>
+      </div>
+      <button type="button" onClick="{{ goHome }}" style="width: 36px; height: 36px; border: 1px solid #262B36; border-radius: 50%; background: #15181F; color: #8A93A3; font-size: 18px; line-height: 1;">×</button>
+    </div>
+
+    <div style="display: flex; gap: 8px; overflow-x: auto; max-width: 100%; margin: 0 -20px 16px; padding: 0 20px 4px;">
+      <sc-for list="{{ betTabs }}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{ t.onPick }}" style="flex: none; min-height: 38px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid {{ t.border }}; border-radius: 999px; background: {{ t.bg }}; color: {{ t.ink }}; padding: 0 14px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.6px;">{{ t.label }}</button>
+      </sc-for>
+      <button type="button" onClick="{{ addBet }}" style="flex: none; min-height: 38px; border: 1px dashed #2E3542; border-radius: 999px; background: none; color: #C6F24E; padding: 0 14px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.6px;">＋ NEW BET</button>
+    </div>
+
+    <div style="border: 1px solid #1F242E; border-radius: 20px; background: #14171E; padding: 18px; margin-bottom: 14px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; color: #6F7887;">STAKE ON THIS BET</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #7B8493;">{{ weekStakedShort }}</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px; margin: 14px 0 16px;">
+        <button type="button" onClick="{{ decStake }}" style="width: 48px; height: 48px; border: 1px solid #262B36; border-radius: 14px; background: #1A1E26; color: #F4F6F8; font-size: 20px; line-height: 1;">−</button>
+        <div style="flex: 1; text-align: center; font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -1.4px;">{{ stakeText }}</div>
+        <button type="button" onClick="{{ incStake }}" style="width: 48px; height: 48px; border: 1px solid #262B36; border-radius: 14px; background: #1A1E26; color: #F4F6F8; font-size: 20px; line-height: 1;">＋</button>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <sc-for list="{{ stakeChips }}" as="c" hint-placeholder-count="3">
+          <button type="button" onClick="{{ c.onPick }}" style="flex: 1; min-height: 40px; border: 1px solid {{ c.border }}; border-radius: 999px; background: {{ c.bg }}; color: {{ c.ink }}; font-family: 'DM Mono', monospace; font-size: 12px;">{{ c.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 22px 0 12px;">
+      <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0;">Legs</h3>
+      <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #6F7887;">TAP TO EDIT</span>
+    </div>
+
+    <div style="display: grid; gap: 10px;">
+      <sc-for list="{{ builderLegs }}" as="leg" hint-placeholder-count="4">
+        <div style="border: 1px solid {{ leg.border }}; border-radius: 18px; background: #14171E; overflow: hidden;">
+          <button type="button" onClick="{{ leg.onToggle }}" style="width: 100%; border: 0; background: none; color: #F4F6F8; display: flex; align-items: center; gap: 12px; padding: 14px 15px; text-align: left;">
+            <span style="width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; flex: none; background: #1F242E; color: #8A93A3; font-family: 'DM Mono', monospace; font-size: 11px;">{{ leg.n }}</span>
+            <span style="flex: 1; min-width: 0; display: block;">
+              <span style="display: block; font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ leg.match }}</span>
+              <span style="display: block; font-size: 11.5px; color: #7B8493; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ leg.detail }}</span>
+            </span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 12px; color: #C6F24E; flex: none;">{{ leg.odds }}</span>
+          </button>
+
+          <sc-if value="{{ leg.open }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 4px 15px 16px; border-top: 1px solid #1F242E; margin-top: 2px;">
+            <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.3px; color: #6F7887; margin: 14px 0 8px;">FIXTURE</div>
+            <input value="{{ leg.match }}" placeholder="Search a fixture, e.g. Arsenal v Chelsea" style="width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 14px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-family: 'Instrument Sans', sans-serif; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+            <div style="display: grid; gap: 6px; margin-top: 8px;">
+              <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="2">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #232833; border-radius: 12px; background: #171B23; padding: 11px 13px;">
+                  <span style="font-size: 12.5px;">{{ s.label }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: #7B8493;">{{ s.meta }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.3px; color: #6F7887; margin: 20px 0 8px;">MARKET</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+              <sc-for list="{{ markets }}" as="m" hint-placeholder-count="8">
+                <button type="button" onClick="{{ m.onPick }}" style="min-height: 36px; display: inline-flex; align-items: center; border: 1px solid {{ m.border }}; border-radius: 999px; background: {{ m.bg }}; color: {{ m.ink }}; padding: 0 13px; font-size: 12.5px;">{{ m.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.3px; color: #6F7887; margin: 20px 0 8px;">PICK</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+              <sc-for list="{{ picks }}" as="p" hint-placeholder-count="3">
+                <button type="button" onClick="{{ p.onPick }}" style="min-height: 36px; display: inline-flex; align-items: center; border: 1px solid {{ p.border }}; border-radius: 999px; background: {{ p.bg }}; color: {{ p.ink }}; padding: 0 13px; font-size: 12.5px;">{{ p.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="display: flex; align-items: flex-end; gap: 10px; margin-top: 20px;">
+              <label style="flex: 1; display: grid; gap: 8px; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.3px; color: #6F7887;">FRACTIONAL ODDS
+                <input value="{{ leg.fraction }}" placeholder="1/2" style="width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 14px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-family: 'DM Mono', monospace; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+              </label>
+              <div style="min-height: 48px; display: flex; align-items: center; padding: 0 14px; border-radius: 12px; background: #1F242E; font-family: 'DM Mono', monospace; font-size: 13px; color: #C6F24E;">{{ leg.decimal }}</div>
+              <button type="button" onClick="{{ leg.onRemove }}" style="min-height: 48px; padding: 0 14px; border: 1px solid #3A2A2C; border-radius: 12px; background: #1E1618; color: #FF9179; font-size: 12.5px;">Remove</button>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <button type="button" onClick="{{ addLeg }}" style="width: 100%; min-height: 52px; margin-top: 12px; border: 1px dashed #2E3542; border-radius: 16px; background: none; color: #C6F24E; font-size: 13.5px;">＋ Add another leg</button>
+
+    <div style="border-radius: 20px; background: #171B23; border: 1px solid #232833; padding: 18px; margin-top: 22px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">COMBINED ODDS</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.7px; margin-top: 6px;">{{ comboText }}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.2px; color: #6F7887;">POTENTIAL RETURN</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin-top: 6px; color: #C6F24E;">{{ returnText }}</div>
+        </div>
+      </div>
+      <button type="button" onClick="{{ goHome }}" style="width: 100%; min-height: 54px; margin-top: 18px; border: 0; border-radius: 14px; background: #C6F24E; color: #10140C; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15.5px;" style-active="transform: scale(0.985);">Save bet</button>
+      <button type="button" onClick="{{ addBet }}" style="width: 100%; min-height: 48px; margin-top: 10px; border: 1px solid #2E3542; border-radius: 14px; background: none; color: #C6F24E; font-size: 13.5px;">Save and start another bet</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ══ MATCH CENTRE ══ -->
+  <sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Match centre" style="padding: 20px 20px 26px;">
+    <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">MATCH CENTRE · REFRESHES EVERY 2 MINS</div>
+    <h2 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin: 9px 0 18px;">Live scores</h2>
+
+    <div style="border-radius: 18px; background: #171B23; border: 1px solid #232833; padding: 16px; margin-bottom: 18px; display: grid; gap: 13px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #6F7887;">WEEK 14 · {{ weekBetsShort }}</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.6px; margin-top: 7px;">{{ weekStatusText }}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #6F7887;">STILL RIDING</div>
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.6px; margin-top: 7px; color: #C6F24E;">{{ weekPotentialText }}</div>
+        </div>
+      </div>
+      <sc-for list="{{ betRows }}" as="b" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 11px; padding-top: 12px; border-top: 1px solid #232833;">
+          <span style="width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ b.avatarBg }}; color: {{ b.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 9.5px;">{{ b.initials }}</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.tag }}</div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #7B8493; margin-top: 4px;">{{ b.legsLabel }}</div>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <sc-for list="{{ b.pips }}" as="p" hint-placeholder-count="4">
+              <span style="width: 8px; height: 24px; border-radius: 4px; background: {{ p.bg }};"></span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; gap: 10px;">
+      <sc-for list="{{ liveMatches }}" as="m" hint-placeholder-count="4">
+        <div style="border: 1px solid #1F242E; border-left: 3px solid {{ m.dot }}; border-radius: 18px; background: #14171E; padding: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 14.5px; font-weight: 500;">{{ m.match }}</div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 10px; color: #7B8493; margin-top: 6px; letter-spacing: 0.6px;">{{ m.state }}</div>
+            </div>
+            <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px;">{{ m.score }}</div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 13px; border-top: 1px solid #1F242E;">
+            <span style="font-size: 12.5px; color: #A9B2C0;">{{ m.pick }}</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.8px; border-radius: 999px; padding: 5px 9px; background: {{ m.pillBg }}; color: {{ m.pillInk }};">{{ m.status }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ══ HISTORY ══ -->
+  <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="History" style="padding: 20px 20px 26px;">
+    <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">14 WEEKS · EVERY BET</div>
+    <h2 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin: 9px 0 18px;">History</h2>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+      <div style="border: 1px solid #1F242E; border-radius: 16px; background: #14171E; padding: 15px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.1px; color: #6F7887;">SETTLED BETS</div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.8px; margin-top: 9px;">31</div>
+        <div style="font-size: 11px; color: #7B8493; margin-top: 5px;">13 weeks · 8 net wins</div>
+      </div>
+      <div style="border: 1px solid #1F242E; border-radius: 16px; background: #14171E; padding: 15px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.1px; color: #6F7887;">TOTAL STAKED</div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.8px; margin-top: 9px;">€260.00</div>
+        <div style="font-size: 11px; color: #7B8493; margin-top: 5px;">Settled only</div>
+      </div>
+      <div style="border: 1px solid #1F242E; border-radius: 16px; background: #14171E; padding: 15px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.1px; color: #6F7887;">RETURNED</div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.8px; margin-top: 9px;">€420.00</div>
+        <div style="font-size: 11px; color: #7B8493; margin-top: 5px;">Winning returns</div>
+      </div>
+      <div style="border: 1px solid #2E3A22; border-radius: 16px; background: #171D12; padding: 15px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.1px; color: #91A76B;">NET RESULT</div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.8px; margin-top: 9px; color: #C6F24E;">+€160.00</div>
+        <div style="font-size: 11px; color: #91A76B; margin-top: 5px;">Returns − stakes</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 7px; margin-bottom: 16px;">
+      <sc-for list="{{ historyFilters }}" as="f" hint-placeholder-count="4">
+        <button type="button" onClick="{{ f.onPick }}" style="flex: 1; min-height: 40px; border: 1px solid {{ f.border }}; border-radius: 999px; background: {{ f.bg }}; color: {{ f.ink }}; font-size: 12.5px;">{{ f.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; gap: 10px;">
+      <sc-for list="{{ historyWeeks }}" as="w" hint-placeholder-count="4">
+        <div style="border: 1px solid #1F242E; border-radius: 18px; background: #14171E; overflow: hidden;">
+          <button type="button" onClick="{{ w.onToggle }}" style="width: 100%; border: 0; background: none; color: #F4F6F8; display: flex; align-items: center; gap: 12px; padding: 15px; text-align: left;">
+            <span style="width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; flex: none; background: #1F242E; color: #A9B2C0; font-family: 'DM Mono', monospace; font-size: 11px;">{{ w.tag }}</span>
+            <span style="flex: 1; min-width: 0; display: block;">
+              <span style="display: block; font-size: 13.5px; font-weight: 500;">{{ w.bettor }}</span>
+              <span style="display: block; font-size: 11.5px; color: #7B8493; margin-top: 4px;">{{ w.meta }}</span>
+            </span>
+            <span style="display: block; text-align: right; flex: none;">
+              <span style="display: block; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px; color: {{ w.resultInk }};">{{ w.result }}</span>
+              <span style="display: block; font-family: 'DM Mono', monospace; font-size: 9.5px; color: #6F7887; margin-top: 5px; letter-spacing: 0.8px;">{{ w.status }}</span>
+            </span>
+          </button>
+          <sc-if value="{{ w.open }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #101319; border-top: 1px solid #1F242E; padding: 7px 15px 15px;">
+            <sc-for list="{{ w.bets }}" as="b" hint-placeholder-count="2">
+              <div style="border: 1px solid #1F242E; border-radius: 14px; background: #14171E; padding: 12px 13px; margin-top: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ b.avatarBg }}; color: {{ b.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 9.5px;">{{ b.initials }}</span>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.owner }}</div>
+                    <div style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.1px; color: #7B8493; margin-top: 4px;">{{ b.meta }}</div>
+                  </div>
+                  <span style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 13.5px; color: {{ b.ink }};">{{ b.result }}</span>
+                </div>
+                <sc-for list="{{ b.legs }}" as="leg" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 11px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; flex: none; background: {{ leg.ink }};"></span>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ leg.match }}</div>
+                      <div style="font-size: 10.5px; color: #7B8493; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ leg.detail }}</div>
+                    </div>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.6px; color: {{ leg.ink }};">{{ leg.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ══ LEAGUE ══ -->
+  <sc-if value="{{ isLeague }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="League table" style="padding: 20px 20px 26px;">
+    <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">THE SCOREBOARD · SINCE AUGUST</div>
+    <h2 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin: 9px 0 18px;">League table</h2>
+
+    <div style="border-radius: 22px; padding: 22px; background: linear-gradient(165deg, #1D232E 0%, #14171E 100%); border: 1px solid #262D3A; margin-bottom: 18px;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; color: #6F7887;">CURRENT LEADER</div>
+      <div style="display: flex; align-items: center; gap: 14px; margin-top: 16px;">
+        <span style="width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; flex: none; background: #C6F24E; color: #10140C; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px;">FD</span>
+        <div style="flex: 1;">
+          <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.6px;">Fintan Doyle</div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; color: #7B8493; margin-top: 5px;">5 – 2 · 3 WEEKS ON TOP</div>
+        </div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -1px; color: #C6F24E;">+€184</div>
+      </div>
+      <sc-if value="{{ showBanter }}" hint-placeholder-val="{{ true }}">
+        <p style="margin: 18px 0 0; font-size: 13.5px; color: #8A93A3; line-height: 1.45;">Still hasn't stood a round. Noted.</p>
+      </sc-if>
+    </div>
+
+    <div style="display: grid; gap: 8px;">
+      <sc-for list="{{ leaders }}" as="p" hint-placeholder-count="5">
+        <div style="border: 1px solid #1F242E; border-radius: 16px; background: {{ p.rowBg }}; padding: 14px 15px;">
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #6F7887; width: 12px;">{{ p.rank }}</span>
+            <span style="width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ p.avatarBg }}; color: {{ p.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 10px;">{{ p.initials }}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 14px; font-weight: 500;">{{ p.name }}</div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 10px; color: #7B8493; margin-top: 4px;">{{ p.record }} · {{ p.note }}</div>
+            </div>
+            <span style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 16px; color: {{ p.profitInk }};">{{ p.profit }}</span>
+          </div>
+          <div style="height: 4px; border-radius: 4px; background: #1F242E; margin-top: 12px; overflow: hidden;">
+            <span style="display: block; height: 100%; border-radius: 4px; width: {{ p.bar }}; background: {{ p.profitInk }};"></span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin: 16px 0 0; font-size: 12px; color: #6F7887; text-align: center;">Profit is returns minus stakes. A week counts as a win when you finish it net positive.</p>
+  </div>
+  </sc-if>
+
+  <!-- ══ ACCOUNT ══ -->
+  <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Account" style="padding: 20px 20px 26px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
+      <span style="width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; flex: none; background: #2A2F3A; color: #F4F6F8; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 16px;">DM</span>
+      <div>
+        <div style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -0.7px;">Dara Mullen</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #7B8493; margin-top: 5px;">dara@example.com · PLAYER</div>
+      </div>
+    </div>
+
+    <div style="border: 1px solid #1F242E; border-radius: 20px; background: #14171E; padding: 18px; display: grid; gap: 14px;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; color: #6F7887;">ACCOUNT SETTINGS</div>
+      <label style="display: grid; gap: 8px; font-size: 12px; color: #A9B2C0;">Display name
+        <input value="Dara Mullen" style="width: 100%; box-sizing: border-box; min-height: 50px; padding: 0 14px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-family: 'Instrument Sans', sans-serif; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+      </label>
+      <label style="display: grid; gap: 8px; font-size: 12px; color: #A9B2C0;">New password
+        <input type="password" placeholder="Leave blank to keep current" style="width: 100%; box-sizing: border-box; min-height: 50px; padding: 0 14px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-family: 'Instrument Sans', sans-serif; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+      </label>
+      <label style="display: grid; gap: 8px; font-size: 12px; color: #A9B2C0;">Confirm password
+        <input type="password" placeholder="Repeat new password" style="width: 100%; box-sizing: border-box; min-height: 50px; padding: 0 14px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-family: 'Instrument Sans', sans-serif; font-size: 16px; outline: none;" style-focus="border-color: #C6F24E;" />
+      </label>
+      <button type="button" style="width: 100%; min-height: 52px; border: 0; border-radius: 14px; background: #C6F24E; color: #10140C; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px;">Save account</button>
+    </div>
+
+    <button type="button" onClick="{{ goManage }}" style="width: 100%; margin-top: 12px; border: 1px solid #1F242E; border-radius: 20px; background: #14171E; color: #F4F6F8; padding: 18px; display: flex; align-items: center; gap: 12px; text-align: left;">
+      <span style="flex: 1;">
+        <span style="display: block; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.3px; color: #6F7887;">ADMIN</span>
+        <span style="display: block; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 16px; margin-top: 6px;">Manage league</span>
+        <span style="display: block; font-size: 12px; color: #7B8493; margin-top: 4px;">Players, roles and weekly turns</span>
+      </span>
+      <span style="color: #C6F24E; font-size: 16px;">→</span>
+    </button>
+
+    <button type="button" onClick="{{ goLogin }}" style="width: 100%; min-height: 52px; margin-top: 12px; border: 1px solid #3A2A2C; border-radius: 14px; background: #1E1618; color: #FF9179; font-size: 14px;">Log out</button>
+  </div>
+  </sc-if>
+
+  <!-- ══ MANAGE ══ -->
+  <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Manage" style="padding: 20px 20px 26px;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.6px; color: #6F7887;">LEAGUE MANAGEMENT</div>
+        <h2 style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -1px; margin: 9px 0 0;">Manage</h2>
+      </div>
+      <button type="button" onClick="{{ goAccount }}" style="width: 36px; height: 36px; border: 1px solid #262B36; border-radius: 50%; background: #15181F; color: #8A93A3; font-size: 18px; line-height: 1;">×</button>
+    </div>
+
+    <div style="border: 1px solid #1F242E; border-radius: 20px; background: #14171E; padding: 18px; margin-top: 20px; display: grid; gap: 12px;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.4px; color: #6F7887;">START NEXT WEEK</div>
+      <div style="display: flex; gap: 10px;">
+        <label style="flex: 1; display: grid; gap: 8px; font-size: 12px; color: #A9B2C0;">Default stake (€)
+          <input value="10" style="width: 100%; box-sizing: border-box; min-height: 50px; padding: 0 14px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-family: 'DM Mono', monospace; font-size: 16px; outline: none;" />
+        </label>
+        <label style="flex: 1; display: grid; gap: 8px; font-size: 12px; color: #A9B2C0;">Bettor
+          <select style="width: 100%; box-sizing: border-box; min-height: 50px; padding: 0 12px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; color: #F4F6F8; font-size: 15px; outline: none;">
+            <option>Oisín Byrne</option>
+            <option>Marty Kane</option>
+            <option>Sean Cullen</option>
+          </select>
+        </label>
+      </div>
+      <label style="display: flex; align-items: center; gap: 12px; border: 1px solid #2C323E; border-radius: 12px; background: #1A1E26; padding: 13px 14px; font-size: 12.5px; color: #A9B2C0;">
+        <input type="checkbox" checked style="width: 20px; height: 20px; flex: none; accent-color: #C6F24E;" />
+        Other players can add their own bets
+      </label>
+      <button type="button" style="width: 100%; min-height: 52px; border: 0; border-radius: 14px; background: #C6F24E; color: #10140C; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px;">Create week 15</button>
+    </div>
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 12px;">
+      <h3 style="font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.5px; margin: 0;">Players</h3>
+      <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #6F7887;">5 ACCOUNTS</span>
+    </div>
+
+    <div style="display: grid; gap: 8px;">
+      <sc-for list="{{ users }}" as="u" hint-placeholder-count="5">
+        <div style="border: 1px solid #1F242E; border-radius: 16px; background: #14171E; padding: 14px 15px; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; background: {{ u.avatarBg }}; color: {{ u.avatarInk }}; font-family: 'DM Mono', monospace; font-size: 10px;">{{ u.initials }}</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.name }}</div>
+            <div style="font-size: 11px; color: #7B8493; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.email }}</div>
+          </div>
+          <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.8px; border-radius: 999px; padding: 5px 9px; background: {{ u.rolePillBg }}; color: {{ u.rolePillInk }};">{{ u.role }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <button type="button" style="width: 100%; min-height: 52px; margin-top: 12px; border: 1px dashed #2E3542; border-radius: 16px; background: none; color: #C6F24E; font-size: 13.5px;">＋ Add a player</button>
+  </div>
+  </sc-if>
+
+  </div>
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <div style="position: sticky; bottom: 0; z-index: 30; padding: 10px 16px 40px; background: rgba(12,14,18,0.9); backdrop-filter: blur(18px); border-top: 1px solid #1B1F27; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+    <button type="button" onClick="{{ goHome }}" style="border: 0; background: none; min-height: 52px; display: grid; gap: 5px; place-items: center; color: {{ navHome }}; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.8px;">
+      <span style="width: 18px; height: 18px; border-radius: 5px; border: 2px solid currentColor;"></span>HOME
+    </button>
+    <button type="button" onClick="{{ goLive }}" style="border: 0; background: none; min-height: 52px; display: grid; gap: 5px; place-items: center; color: {{ navLive }}; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.8px;">
+      <span style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor;"></span>LIVE
+    </button>
+    <button type="button" onClick="{{ goHistory }}" style="border: 0; background: none; min-height: 52px; display: grid; gap: 5px; place-items: center; color: {{ navHistory }}; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.8px;">
+      <span style="width: 18px; height: 4px; border-radius: 2px; background: currentColor; box-shadow: 0 6px 0 currentColor, 0 12px 0 currentColor; margin-bottom: 12px;"></span>HISTORY
+    </button>
+    <button type="button" onClick="{{ goLeague }}" style="border: 0; background: none; min-height: 52px; display: grid; gap: 5px; place-items: center; color: {{ navLeague }}; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 0.8px;">
+      <span style="width: 18px; height: 18px; border-radius: 5px 5px 9px 9px; border: 2px solid currentColor;"></span>TABLE
+    </button>
+  </div>
+
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:460,&quot;height&quot;:940},&quot;homeVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Turn first&quot;,&quot;Money first&quot;],&quot;default&quot;:&quot;Turn first&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Dashboard&quot;},&quot;defaultStake&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:5,&quot;max&quot;:50,&quot;step&quot;:5,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Week&quot;},&quot;showBanter&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Copy&quot;}}">
+const LIME = '#C6F24E';
+const CORAL = '#FF7A5C';
+const AMBER = '#F2C14E';
+const MUTED = '#6F7887';
+
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    activeBet: 'b1',
+    added: [],
+    stakes: { b1: 20, b2: 10, b3: 15 },
+    openLeg: 0,
+    openWeek: 'w13',
+    filter: 'All',
+    market: 'Match result',
+    pick: 'Arsenal'
+  };
+
+  go = (screen) => () => this.setState({ screen });
+
+  money = (n) => '€' + Number(n).toFixed(2);
+
+  legData = [
+    { match: 'Arsenal v Chelsea', detail: 'Match result · Arsenal', odds: '4/5', fraction: '4/5', decimal: '1.80', dec: 1.8, status: 'won' },
+    { match: 'Man City v Brighton', detail: 'Both teams to score · Yes', odds: '8/11', fraction: '8/11', decimal: '1.73', dec: 1.73, status: 'won' },
+    { match: 'Liverpool v Everton', detail: 'Total goals · Over 2.5', odds: '4/6', fraction: '4/6', decimal: '1.67', dec: 1.67, status: 'pending' },
+    { match: 'Newcastle v Villa', detail: 'Double chance · Newcastle or Draw', odds: '1/2', fraction: '1/2', decimal: '1.50', dec: 1.5, status: 'pending' }
+  ];
+
+  betData = [
+    { id: 'b1', n: 1, owner: 'Dara Mullen', initials: 'DM', you: true, turn: true, legs: this.legData },
+    { id: 'b2', n: 2, owner: 'Dara Mullen', initials: 'DM', you: true, turn: true, legs: [
+      { match: 'Spurs v Palace', detail: 'Total goals · Over 2.5', odds: '5/6', fraction: '5/6', decimal: '1.83', dec: 1.83, status: 'pending' },
+      { match: 'Forest v Brentford', detail: 'Match result · Forest', odds: '6/5', fraction: '6/5', decimal: '2.20', dec: 2.2, status: 'pending' }
+    ] },
+    { id: 'b3', n: 3, owner: 'Fintan Doyle', initials: 'FD', legs: [
+      { match: 'Bayern v Leipzig', detail: 'Both teams to score · Yes', odds: '4/7', fraction: '4/7', decimal: '1.57', dec: 1.57, status: 'won' },
+      { match: 'Real v Girona', detail: 'Match result · Real Madrid', odds: '2/5', fraction: '2/5', decimal: '1.40', dec: 1.4, status: 'pending' },
+      { match: 'Inter v Roma', detail: 'Draw no bet · Inter', odds: '8/13', fraction: '8/13', decimal: '1.62', dec: 1.62, status: 'lost' }
+    ] }
+  ];
+
+  liveData = [
+    { match: 'Arsenal v Chelsea', state: "67' · SECOND HALF", score: '2 – 1', pick: 'Pick: Arsenal', status: 'ON TRACK', dot: LIME, pillBg: '#1B2413', pillInk: LIME },
+    { match: 'Man City v Brighton', state: "34' · FIRST HALF", score: '1 – 0', pick: 'Pick: Yes', status: 'PENDING', dot: AMBER, pillBg: '#241E10', pillInk: AMBER },
+    { match: 'Liverpool v Everton', state: 'STARTS 17:30 · TODAY', score: '—', pick: 'Pick: Over 2.5', status: 'UPCOMING', dot: '#2C323E', pillBg: '#1A1E26', pillInk: '#8A93A3' },
+    { match: 'Newcastle v Villa', state: 'STARTS SUN 14:00', score: '—', pick: 'Pick: Newcastle or Draw', status: 'UPCOMING', dot: '#2C323E', pillBg: '#1A1E26', pillInk: '#8A93A3' }
+  ];
+
+  leaderData = [
+    { name: 'Fintan Doyle', initials: 'FD', record: '5 – 2', note: 'On a heater', profit: '+€184.00', value: 184 },
+    { name: 'Dara Mullen', initials: 'DM', record: '4 – 3', note: 'You', profit: '+€96.00', value: 96, you: true },
+    { name: 'Oisín Byrne', initials: 'OB', record: '3 – 4', note: 'Up next', profit: '−€12.00', value: -12 },
+    { name: 'Marty Kane', initials: 'MK', record: '2 – 5', note: 'Long season', profit: '−€48.00', value: -48 },
+    { name: 'Sean Cullen', initials: 'SC', record: '2 – 5', note: 'Correct scores again', profit: '−€60.00', value: -60 }
+  ];
+
+  weekData = [
+    { id: 'w13', tag: 'W13', bettor: 'Fintan Doyle + 1', meta: '01 Mar · 3 bets · €30 staked', result: '+€114.00', status: 'NET WIN', won: true,
+      bets: [
+        { owner: 'Fintan Doyle', initials: 'FD', meta: 'BET 1 · 6.70 · €10', result: '+€57.00', won: true, legs: [
+          { match: 'Spurs v Wolves', detail: 'Match result · Spurs · 2-0', status: 'won' },
+          { match: 'Brentford v Fulham', detail: 'Both teams to score · Yes · 1-1', status: 'won' }
+        ] },
+        { owner: 'Fintan Doyle', initials: 'FD', meta: 'BET 2 · 8.70 · €10', result: '+€77.00', won: true, legs: [
+          { match: 'Everton v Palace', detail: 'Draw no bet · Everton · 2-1', status: 'won' },
+          { match: 'Leeds v Burnley', detail: 'Total goals · Over 1.5 · 3-1', status: 'won' }
+        ] },
+        { owner: 'Dara Mullen', initials: 'DM', meta: 'BET 3 · 4.20 · €10', result: '−€10.00', won: false, legs: [
+          { match: 'Arsenal v Villa', detail: 'Correct score · 2-0 · 1-1', status: 'lost' },
+          { match: 'City v Brighton', detail: 'Match result · City · 3-1', status: 'won' }
+        ] }
+      ] },
+    { id: 'w12', tag: 'W12', bettor: 'Marty Kane', meta: '22 Feb · 2 bets · €20 staked', result: '−€20.00', status: 'NET LOSS', won: false,
+      bets: [
+        { owner: 'Marty Kane', initials: 'MK', meta: 'BET 1 · 12.40 · €10', result: '−€10.00', won: false, legs: [
+          { match: 'Arsenal v Man Utd', detail: 'Correct score · 2-1 · 3-1', status: 'lost' },
+          { match: 'Chelsea v Brighton', detail: 'Match result · Chelsea · 2-0', status: 'won' }
+        ] },
+        { owner: 'Marty Kane', initials: 'MK', meta: 'BET 2 · 5.10 · €10', result: '−€10.00', won: false, legs: [
+          { match: 'Villa v Leeds', detail: 'Total goals · Over 2.5 · 3-1', status: 'won' },
+          { match: 'City v Newcastle', detail: 'To win to nil · City · 2-1', status: 'lost' }
+        ] }
+      ] },
+    { id: 'w11', tag: 'W11', bettor: 'Sean Cullen', meta: '15 Feb · 1 bet · €10 staked', result: '−€10.00', status: 'NET LOSS', won: false,
+      bets: [
+        { owner: 'Sean Cullen', initials: 'SC', meta: 'BET 1 · 9.80 · €10', result: '−€10.00', won: false, legs: [
+          { match: 'Liverpool v Spurs', detail: 'Match result · Liverpool · 1-1', status: 'lost' },
+          { match: 'Forest v Bournemouth', detail: 'Both teams to score · Yes · 2-2', status: 'won' }
+        ] }
+      ] },
+    { id: 'w10', tag: 'W10', bettor: 'Dara Mullen + 1', meta: '08 Feb · 2 bets · €20 staked', result: '+€62.00', status: 'NET WIN', won: true,
+      bets: [
+        { owner: 'Dara Mullen', initials: 'DM', meta: 'BET 1 · 8.20 · €10', result: '+€72.00', won: true, legs: [
+          { match: 'Man City v Palace', detail: 'Match result · Man City · 3-0', status: 'won' },
+          { match: 'Arsenal v Everton', detail: 'Total goals · Over 1.5 · 2-0', status: 'won' },
+          { match: 'Brighton v Wolves', detail: 'Double chance · Brighton or Draw · 1-1', status: 'won' }
+        ] },
+        { owner: 'Oisín Byrne', initials: 'OB', meta: 'BET 2 · 3.40 · €10', result: '−€10.00', won: false, legs: [
+          { match: 'Fulham v West Ham', detail: 'Match result · Fulham · 0-2', status: 'lost' }
+        ] }
+      ] }
+  ];
+
+  userData = [
+    { name: 'Dara Mullen', email: 'dara@example.com', initials: 'DM', role: 'ADMIN', admin: true },
+    { name: 'Fintan Doyle', email: 'fintan@example.com', initials: 'FD', role: 'PLAYER' },
+    { name: 'Oisín Byrne', email: 'oisin@example.com', initials: 'OB', role: 'PLAYER' },
+    { name: 'Marty Kane', email: 'marty@example.com', initials: 'MK', role: 'PLAYER' },
+    { name: 'Sean Cullen', email: 'sean@example.com', initials: 'SC', role: 'PLAYER' }
+  ];
+
+  markets = ['Match result', 'Double chance', 'Both teams to score', 'Total goals', 'First team to score', 'Draw no bet', 'To win to nil', 'Correct score'];
+  pickSets = {
+    'Match result': ['Arsenal', 'Draw', 'Chelsea'],
+    'Double chance': ['Arsenal or Draw', 'Draw or Chelsea', 'Arsenal or Chelsea'],
+    'Both teams to score': ['Yes', 'No'],
+    'Total goals': ['Over 1.5', 'Under 1.5', 'Over 2.5', 'Under 2.5', 'Over 3.5'],
+    'First team to score': ['Arsenal', 'Chelsea', 'No goal'],
+    'Draw no bet': ['Arsenal', 'Chelsea'],
+    'To win to nil': ['Arsenal', 'Chelsea'],
+    'Correct score': ['2-1', '1-0', '2-0', '3-1']
+  };
+
+  statusInk(status) {
+    if (status === 'won') return LIME;
+    if (status === 'lost') return CORAL;
+    return AMBER;
+  }
+
+  chip(active) {
+    return active
+      ? { bg: LIME, border: LIME, ink: '#10140C' }
+      : { bg: '#1A1E26', border: '#2C323E', ink: '#A9B2C0' };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const screen = s.screen;
+    const variant = (this.props.homeVariant ?? 'Turn first') === 'Money first' ? 'money' : 'turn';
+    const defStake = this.props.defaultStake ?? 10;
+    const stakeOf = (b) => s.stakes[b.id] ?? defStake;
+    const bets = this.betData.concat(s.added).map((b) => {
+      const combo = Number(b.legs.reduce((t, l) => t * l.dec, 1).toFixed(2));
+      const dead = b.legs.some((l) => l.status === 'lost');
+      const done = b.legs.every((l) => l.status !== 'pending');
+      const empty = b.legs.every((l) => !l.match);
+      const stake = stakeOf(b);
+      return { ...b, combo, empty, stake, ret: stake * combo, state: dead ? 'lost' : done ? 'won' : 'live' };
+    });
+    const active = bets.find((b) => b.id === s.activeBet) || bets[0];
+    const alive = bets.filter((b) => b.state !== 'lost' && !b.empty);
+    const weekPotential = alive.reduce((t, b) => t + b.ret, 0);
+    const combo = active.combo;
+    const weekStaked = bets.reduce((t, b) => t + b.stake, 0);
+    const setStake = (v) => this.setState((p) => ({ stakes: { ...p.stakes, [active.id]: Math.max(1, v) } }));
+    const legCount = (n) => n + (n === 1 ? ' LEG' : ' LEGS');
+    const betsLabel = bets.length + (bets.length === 1 ? ' BET' : ' BETS');
+    const pillFor = (state) => state === 'won'
+      ? { pillBg: '#1B2413', pillInk: LIME, status: 'WON' }
+      : state === 'lost'
+        ? { pillBg: '#241315', pillInk: CORAL, status: 'BUST' }
+        : { pillBg: '#241E10', pillInk: AMBER, status: 'LIVE' };
+    const maxAbs = Math.max(...this.leaderData.map((p) => Math.abs(p.value)));
+    const titles = {
+      home: 'Week 14', bet: 'Week 14', live: 'Match centre',
+      history: 'History', league: 'League table', account: 'Account', manage: 'Manage'
+    };
+    const metas = {
+      home: 'YOUR TURN · WEEK 14', bet: 'BUILDING BET ' + active.n, live: '2 LIVE · 2 UPCOMING',
+      history: '14 WEEKS RECORDED', league: '5 PLAYERS', account: 'DARA MULLEN', manage: 'ADMIN TOOLS'
+    };
+    const navInk = (name) => (screen === name ? LIME : MUTED);
+
+    return {
+      isLogin: screen === 'login',
+      inApp: screen !== 'login',
+      isBet: screen === 'bet',
+      isLive: screen === 'live',
+      isHistory: screen === 'history',
+      isLeague: screen === 'league',
+      isAccount: screen === 'account',
+      isManage: screen === 'manage',
+      showTurnHome: screen === 'home' && variant === 'turn',
+      showMoneyHome: screen === 'home' && variant === 'money',
+      showBanter: this.props.showBanter ?? true,
+
+      headerTitle: titles[screen] || 'Week 14',
+      headerMeta: metas[screen] || '',
+      navHome: navInk('home'),
+      navLive: navInk('live'),
+      navHistory: navInk('history'),
+      navLeague: navInk('league'),
+
+      goLogin: this.go('login'),
+      goHome: this.go('home'),
+      goBet: this.go('bet'),
+      goLive: this.go('live'),
+      goHistory: this.go('history'),
+      goLeague: this.go('league'),
+      goAccount: this.go('account'),
+      goManage: this.go('manage'),
+
+      stakeText: this.money(active.stake),
+      weekStakedShort: this.money(weekStaked) + ' ACROSS ' + betsLabel,
+      incStake: () => setStake(active.stake + 5),
+      decStake: () => setStake(active.stake - 5),
+      stakeChips: [10, 20, 50].map((v) => ({
+        label: '€' + v, ...this.chip(active.stake === v), onPick: () => setStake(v)
+      })),
+      comboText: combo.toFixed(2),
+      returnText: this.money(active.stake * combo),
+      plText: '+€96.00',
+      bestText: '€134.00',
+
+      weekBetsLabel: betsLabel + ' · ' + this.money(weekStaked) + ' STAKED',
+      weekBetsShort: betsLabel,
+      weekPotentialText: this.money(weekPotential),
+      weekStatusText: alive.length + ' of ' + bets.length + ' still standing',
+      betMeta: 'WEEK 14 · BET ' + active.n + ' OF ' + bets.length + ' · ' + active.owner.toUpperCase(),
+
+      betCards: bets.map((b) => {
+        const p = pillFor(b.state);
+        return {
+          ...b, ...p,
+          tag: 'BET ' + b.n + ' · ' + legCount(b.legs.length) + ' · ' + this.money(b.stake),
+          combo: b.empty ? '—' : b.combo.toFixed(2),
+          ret: b.empty ? '—' : this.money(b.state === 'lost' ? 0 : b.ret),
+          returnLabel: b.state === 'won' ? 'RETURNED' : 'RETURNS',
+          returnInk: b.state === 'lost' ? CORAL : LIME,
+          border: b.you ? '#2E3542' : '#1F242E',
+          cardBg: b.you ? '#171B23' : '#14171E',
+          avatarBg: b.you ? '#2A2F3A' : '#1F242E',
+          avatarInk: '#F4F6F8',
+          pips: b.legs.map((l) => ({ bg: this.statusInk(l.status) })),
+          action: b.empty ? 'Add a selection' : b.you ? 'Edit bet' : 'View bet',
+          btnBorder: b.you ? LIME : '#2C323E',
+          btnBg: b.you ? LIME : 'none',
+          btnInk: b.you ? '#10140C' : '#A9B2C0',
+          onOpen: () => this.setState({ screen: 'bet', activeBet: b.id, openLeg: 0 })
+        };
+      }),
+      betTabs: bets.map((b) => ({
+        label: b.initials + ' · BET ' + b.n,
+        ...this.chip(b.id === active.id),
+        onPick: () => this.setState({ activeBet: b.id, openLeg: 0 })
+      })),
+      betRows: bets.map((b) => ({
+        ...b,
+        tag: 'Bet ' + b.n + ' · ' + b.owner,
+        legsLabel: this.money(b.stake) + ' · ' + legCount(b.legs.length).toUpperCase() + ' · ' + (b.empty ? 'NO SELECTION YET' : b.combo.toFixed(2) + ' · ' + pillFor(b.state).status),
+        avatarBg: b.you ? '#2A2F3A' : '#1F242E',
+        avatarInk: '#F4F6F8',
+        pips: b.legs.map((l) => ({ bg: this.statusInk(l.status) }))
+      })),
+      addBet: () => this.setState((p) => {
+        const id = 'n' + (p.added.length + 1);
+        return {
+          screen: 'bet',
+          activeBet: id,
+          openLeg: 0,
+          added: p.added.concat([{
+            id, n: this.betData.length + p.added.length + 1,
+            owner: 'Dara Mullen', initials: 'DM', you: true,
+            legs: [{ match: '', detail: 'Pick a fixture and a market', odds: '—', fraction: '', decimal: '1.00', dec: 1, status: 'pending' }]
+          }])
+        };
+      }),
+
+      legs: this.legData.map((l) => ({ ...l, dot: this.statusInk(l.status) })),
+      builderLegs: active.legs.map((l, i) => ({
+        ...l, n: i + 1, open: s.openLeg === i,
+        border: s.openLeg === i ? '#2E3542' : '#1F242E',
+        onToggle: () => this.setState((p) => ({ openLeg: p.openLeg === i ? -1 : i })),
+        onRemove: () => this.setState({ openLeg: -1 })
+      })),
+      addLeg: () => this.setState({ openLeg: active.legs.length - 1 }),
+      suggestions: [
+        { label: 'Arsenal v Chelsea', meta: 'PREMIER LEAGUE · 14 MAR 12:30' },
+        { label: 'Arsenal v Bayern', meta: 'CHAMPIONS LEAGUE · 18 MAR 20:00' }
+      ],
+      markets: this.markets.map((m) => ({
+        label: m, ...this.chip(m === s.market),
+        onPick: () => this.setState({ market: m, pick: (this.pickSets[m] || [])[0] })
+      })),
+      picks: (this.pickSets[s.market] || []).map((p) => ({
+        label: p, ...this.chip(p === s.pick), onPick: () => this.setState({ pick: p })
+      })),
+
+      liveMatches: this.liveData,
+      liveTop: this.liveData.slice(0, 2),
+
+      leaders: this.leaderData.map((p, i) => ({
+        ...p, rank: i + 1,
+        avatarBg: i === 0 ? LIME : p.you ? '#2A2F3A' : '#1F242E',
+        avatarInk: i === 0 ? '#10140C' : '#A9B2C0',
+        profitInk: p.value >= 0 ? LIME : CORAL,
+        rowBg: p.you ? '#171B23' : '#14171E',
+        bar: Math.round((Math.abs(p.value) / maxAbs) * 100) + '%'
+      })),
+      leadersTop: this.leaderData.slice(0, 3).map((p, i) => ({
+        ...p, rank: i + 1,
+        avatarBg: i === 0 ? LIME : p.you ? '#2A2F3A' : '#1F242E',
+        avatarInk: i === 0 ? '#10140C' : '#A9B2C0',
+        profitInk: p.value >= 0 ? LIME : CORAL
+      })),
+      formBars: ['w', 'l', 'w', 'w', 'l', 'l', 'w', 'p'].map((r) => ({
+        bg: r === 'w' ? LIME : r === 'l' ? '#3A2A2C' : '#1F242E'
+      })),
+
+      historyFilters: ['All', 'Won', 'Lost', 'Pending'].map((f) => ({
+        label: f, ...this.chip(f === s.filter), onPick: () => this.setState({ filter: f })
+      })),
+      historyWeeks: this.weekData
+        .filter((w) => s.filter === 'All' || (s.filter === 'Won' ? w.won : s.filter === 'Lost' ? !w.won : false))
+        .map((w) => ({
+          ...w, open: s.openWeek === w.id,
+          resultInk: w.won ? LIME : CORAL,
+          bets: w.bets.map((b) => ({
+            ...b,
+            ink: b.won ? LIME : CORAL,
+            avatarBg: b.initials === 'DM' ? '#2A2F3A' : '#1F242E',
+            avatarInk: '#F4F6F8',
+            legs: b.legs.map((l) => ({ ...l, status: l.status.toUpperCase(), ink: this.statusInk(l.status) }))
+          })),
+          onToggle: () => this.setState((p) => ({ openWeek: p.openWeek === w.id ? null : w.id }))
+        })),
+
+      users: this.userData.map((u) => ({
+        ...u,
+        avatarBg: u.admin ? LIME : '#1F242E',
+        avatarInk: u.admin ? '#10140C' : '#A9B2C0',
+        rolePillBg: u.admin ? '#1B2413' : '#1A1E26',
+        rolePillInk: u.admin ? LIME : '#8A93A3'
+      }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -3482,6 +3482,7 @@ select option {
 .screen-pad {
   padding: 20px 20px 26px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 26px;
   max-width: 640px;
   margin: 0 auto;
@@ -3552,6 +3553,144 @@ select option {
   background: var(--lime);
   border-color: var(--lime);
   color: var(--lime-ink);
+}
+.bet-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 10px;
+  scrollbar-width: none;
+}
+.bet-tabs::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.bet-tab {
+  flex: none;
+  min-height: 34px;
+  padding: 0 14px;
+  font: 400 12px 'DM Mono';
+}
+.bet-tab-new {
+  border-style: dashed;
+  border-color: var(--line-dash);
+  background: none;
+  color: var(--lime);
+}
+.bet-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  max-width: 100%;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 20px;
+  overscroll-behavior-x: contain;
+  margin: 0 -20px;
+  padding: 2px 20px 6px;
+  scrollbar-width: none;
+}
+.bet-carousel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.bet-carousel-card {
+  scroll-snap-align: start;
+  flex: none;
+  width: 260px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.bet-carousel-card.own {
+  background: var(--surface-2);
+  border: 1px dashed var(--line-dash);
+}
+.bet-carousel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bet-carousel-owner {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bet-carousel-owner strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bet-carousel-owner small {
+  font: 400 9.5px 'DM Mono';
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.bet-carousel-figures {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.bet-carousel-figures strong {
+  display: block;
+  font: 700 20px 'Archivo';
+  margin-top: 4px;
+}
+.bet-carousel-figures .acca-return strong {
+  color: var(--lime);
+}
+.bet-carousel-pips {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+}
+.bet-carousel-pips span {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-4);
+}
+.bet-carousel-pips span.won {
+  background: var(--lime);
+}
+.bet-carousel-pips span.lost {
+  background: var(--coral);
+}
+.bet-carousel-action {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+.bet-carousel-view {
+  display: block;
+  text-align: center;
+  min-height: 42px;
+  line-height: 42px;
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-3);
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+.bet-carousel-new {
+  flex: none;
+  width: 124px;
+  border: 1px dashed var(--line-dash);
+  border-radius: 20px;
+  background: none;
+  color: var(--lime);
+  font-size: 13px;
+}
+.bet-carousel-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
 }
 .status-pill {
   display: inline-flex;

@@ -13,7 +13,6 @@ defineEmits(['edit'])
 // Local preview mode (no Supabase configured) has no way to create a real
 // round, so its in-memory placeholder round always stands in for one.
 const hasRound = computed(() => Boolean(props.round.id) || !props.databaseEnabled)
-const hasBet = computed(() => props.bet.selections.length > 0)
 const isSettled = computed(() => props.round.status === 'settled')
 const betWon = computed(() => props.bet.status === 'won')
 const betLost = computed(() => props.bet.status === 'lost')
@@ -49,25 +48,19 @@ const countdown = computed(() => {
     </template>
     <template v-else>
       <div class="hero-top">
-        <span v-if="isSettled" class="hero-overline">{{ round.title }}</span>
-        <span v-else class="hero-overline"
-          >WEEK {{ round.week }} &middot;
-          {{ canEdit ? 'YOUR TURN' : `${round.bettor}'S TURN` }}</span
-        >
+        <span class="hero-overline">{{ round.title }}</span>
         <span v-if="isSettled" class="hero-countdown">{{
           betWon ? 'WON' : betLost ? 'LOST' : 'SETTLED'
         }}</span>
         <span v-else-if="countdown" class="hero-countdown">{{ countdown }}</span>
       </div>
       <h2 class="hero-headline">
-        {{
-          isSettled ? `Last week's acca` : canEdit ? "You're on the hook" : `${round.bettor}'s turn`
-        }}
+        {{ isSettled ? `Last week's acca` : "You're on the hook" }}
       </h2>
       <div class="hero-stats">
         <div>
-          <span class="hero-stat-label">STAKE</span>
-          <strong>{{ money(bet.stake || round.stake) }}</strong>
+          <span class="hero-stat-label">STAKE / BET</span>
+          <strong>{{ money(round.stake) }}</strong>
         </div>
         <div class="hero-divider" />
         <div v-if="isSettled">
@@ -80,7 +73,7 @@ const countdown = computed(() => {
         </div>
       </div>
       <button v-if="canEdit && !isSettled" class="hero-button" type="button" @click="$emit('edit')">
-        {{ hasBet ? 'Edit the acca' : 'Build the acca' }} &rarr;
+        Place a bet &rarr;
       </button>
       <NuxtLink v-else-if="isSettled && isAdmin" class="hero-button" to="/admin"
         >Go to Manage &rarr;</NuxtLink

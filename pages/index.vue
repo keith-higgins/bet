@@ -11,6 +11,16 @@ async function saveSettlement(statuses) {
   const saved = await dashboard.settleBet(statuses)
   if (saved) settlementOpen.value = false
 }
+
+function goBuildNewBet() {
+  dashboard.startNewBet()
+  navigateTo('/bet')
+}
+
+function goEditBet(betId) {
+  dashboard.selectBet(betId)
+  navigateTo('/bet')
+}
 </script>
 
 <template>
@@ -29,7 +39,7 @@ async function saveSettlement(statuses) {
         :is-admin="dashboard.isAdmin"
         :database-enabled="dashboard.databaseEnabled"
         :money="dashboard.money"
-        @edit="navigateTo('/bet')"
+        @edit="goBuildNewBet"
       />
 
       <RecordCard
@@ -42,15 +52,14 @@ async function saveSettlement(statuses) {
         :money="dashboard.money"
       />
 
-      <AccumulatorCard
-        :bet="dashboard.bet"
-        :legs="dashboard.legs"
-        :combined-odds="dashboard.combinedOdds"
-        :potential-return="dashboard.potentialReturn"
-        :can-edit="dashboard.canManageCurrentBet"
+      <BetWeekCarousel
+        v-if="dashboard.round.id"
+        :bets="dashboard.round.bets"
         :current-user-id="dashboard.currentUserId"
+        :is-settled="dashboard.round.status === 'settled'"
         :money="dashboard.money"
-        @edit="navigateTo('/bet')"
+        @edit="goEditBet"
+        @new-bet="goBuildNewBet"
       />
       <button
         v-if="dashboard.canManageCurrentBet && dashboard.bet.selections.length"

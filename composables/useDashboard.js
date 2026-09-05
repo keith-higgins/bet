@@ -7,7 +7,6 @@ export function useDashboard() {
     loadAssignableUsers,
     saveBetToDatabase,
     settleBetInDatabase,
-    updateWeek,
     createInitialWeek,
     createWeek,
     deleteWeek
@@ -22,6 +21,7 @@ export function useDashboard() {
   }))
   const previousRounds = useState('dashboard-previous-rounds', () => [])
   const assignableUsers = useState('dashboard-assignable-users', () => [])
+  const activeBetId = useState('dashboard-active-bet-id', () => null)
   const bet = useState('dashboard-bet', () => ({
     id: null,
     bettorId: null,
@@ -44,6 +44,37 @@ export function useDashboard() {
   )
   const potentialReturn = computed(() => Number(stake.value || 0) * combinedOdds.value)
   const allRounds = computed(() => [round.value, ...previousRounds.value])
+  const userBets = computed(() =>
+    round.value.bets.filter(
+      (currentBet) => !currentUserId.value || currentBet.bettorId === currentUserId.value
+    )
+  )
+  // Groups a player's bets by week so scoring reflects whether that week's
+  // bets netted positive overall, not whether any single bet won or lost.
+  function weeklyResultsFor(playerId) {
+    return allRounds.value
+      .map((item) => {
+        const weekBets = (item.bets || []).filter((currentBet) => currentBet.bettorId === playerId)
+        if (!weekBets.length) return null
+        const pending = weekBets.some((currentBet) => !['won', 'lost'].includes(currentBet.status))
+        const net = weekBets.reduce(
+          (total, currentBet) =>
+            total +
+            (['won', 'lost'].includes(currentBet.status)
+              ? Number(currentBet.actualReturn || 0) - Number(currentBet.stake || 0)
+              : 0),
+          0
+        )
+        return { week: item.week, status: pending ? 'pending' : net > 0 ? 'won' : 'lost', net }
+      })
+      .filter(Boolean)
+  }
+  const personalWeeklyResults = computed(() =>
+    weeklyResultsFor(currentUserId.value || bet.value.bettorId)
+  )
+  const personalSettledWeeks = computed(() =>
+    personalWeeklyResults.value.filter((result) => result.status !== 'pending')
+  )
   const personalBets = computed(() => {
     const playerId = currentUserId.value || bet.value.bettorId
     return allRounds.value
@@ -61,14 +92,11 @@ export function useDashboard() {
     )
   )
   const personalBestReturn = computed(() =>
-    Math.max(
-      0,
-      ...personalSettledBets.value.map((currentBet) => Number(currentBet.actualReturn || 0))
-    )
+    Math.max(0, ...personalSettledWeeks.value.map((result) => result.net))
   )
   const personalRecord = computed(() => ({
-    won: personalSettledBets.value.filter((currentBet) => currentBet.status === 'won').length,
-    lost: personalSettledBets.value.filter((currentBet) => currentBet.status === 'lost').length
+    won: personalSettledWeeks.value.filter((result) => result.status === 'won').length,
+    lost: personalSettledWeeks.value.filter((result) => result.status === 'lost').length
   }))
   const personalStaked = computed(() =>
     personalSettledBets.value.reduce(
@@ -77,12 +105,7 @@ export function useDashboard() {
     )
   )
   const personalForm = computed(() =>
-    [...personalBets.value]
-      .reverse()
-      .slice(-8)
-      .map((currentBet) =>
-        currentBet.status === 'won' ? 'won' : currentBet.status === 'lost' ? 'lost' : 'pending'
-      )
+    [...personalWeeklyResults.value].reverse().slice(-8).map((result) => result.status)
   )
   const playersForWeek = computed(() =>
     round.value.members?.length ? round.value.members : players.value
@@ -95,20 +118,8 @@ export function useDashboard() {
       ).values()
     ]
   })
-  const nextBettorId = computed(
-    () =>
-      assignableUsers.value.find((member) => member.userId !== round.value.bettorId)?.userId ||
-      round.value.members?.find((member) => member.userId !== round.value.bettorId)?.userId ||
-      round.value.bettorId ||
-      ''
-  )
   const canManageCurrentBet = computed(
-    () =>
-      !databaseEnabled.value ||
-      (Boolean(round.value.id) &&
-        (isAdmin.value ||
-          !currentUserId.value ||
-          currentUserId.value === round.value.bettorId))
+    () => !databaseEnabled.value || Boolean(round.value.id)
   )
   const leaders = computed(() => {
     const allBets = allRounds.value.flatMap((item) => item.bets || [])
@@ -126,17 +137,12 @@ export function useDashboard() {
 
     return knownMembers
       .map((member) => {
-        const memberBets = allBets.filter((item) => item.bettorId === member.userId)
-        const won = memberBets.filter((item) => item.status === 'won').length
-        const lost = memberBets.filter((item) => item.status === 'lost').length
-        const netProfit = memberBets.reduce(
-          (total, item) =>
-            total +
-            (['won', 'lost'].includes(item.status)
-              ? Number(item.actualReturn || 0) - Number(item.stake || 0)
-              : 0),
-          0
+        const weeklyResults = weeklyResultsFor(member.userId).filter(
+          (result) => result.status !== 'pending'
         )
+        const won = weeklyResults.filter((result) => result.status === 'won').length
+        const lost = weeklyResults.filter((result) => result.status === 'lost').length
+        const netProfit = weeklyResults.reduce((total, result) => total + result.net, 0)
         return {
           userId: member.userId,
           name: member.displayName || 'Player',
@@ -175,8 +181,8 @@ export function useDashboard() {
   function resetBet(value) {
     bet.value = {
       id: null,
-      bettorId: value.bettorId || currentUserId.value,
-      bettor: value.bettor || currentUserName.value || 'Player',
+      bettorId: currentUserId.value || value.bettorId,
+      bettor: currentUserName.value || value.bettor || 'Player',
       type: 'Accumulator',
       stake: value.stake,
       status: 'pending',
@@ -184,28 +190,45 @@ export function useDashboard() {
     }
     stake.value = value.stake
     legs.value = [{ match: '', market: 'Match result', pick: '', odds: 1.5, status: 'pending' }]
+    activeBetId.value = null
+  }
+
+  function loadBetIntoState(value, matchedBet) {
+    bet.value = matchedBet
+    stake.value = matchedBet.stake
+    legs.value = matchedBet.selections.map((item) => ({
+      id: item.id,
+      match: item.match || item.matchId || '',
+      matchId: item.matchId || '',
+      provider: item.provider || '',
+      startsAt: item.startsAt || '',
+      home: item.home || '',
+      away: item.away || '',
+      market: item.market,
+      pick: item.pick,
+      odds: item.odds,
+      status: item.status || 'pending'
+    }))
+    activeBetId.value = matchedBet.id
+  }
+
+  function selectBet(id) {
+    const matchedBet = round.value.bets.find((item) => item.id === id)
+    if (matchedBet) loadBetIntoState(round.value, matchedBet)
+  }
+
+  function startNewBet() {
+    resetBet(round.value)
   }
 
   function applyRound(value) {
     if (!value) return
     round.value = value
-    const assignedBet = value.bets?.find((item) => item.bettorId === value.bettorId)
-    if (assignedBet) {
-      bet.value = assignedBet
-      stake.value = bet.value.stake
-      legs.value = bet.value.selections.map((item) => ({
-        id: item.id,
-        match: item.match || item.matchId || '',
-        matchId: item.matchId || '',
-        provider: item.provider || '',
-        startsAt: item.startsAt || '',
-        home: item.home || '',
-        away: item.away || '',
-        market: item.market,
-        pick: item.pick,
-        odds: item.odds,
-        status: item.status || 'pending'
-      }))
+    const matchedBet =
+      value.bets?.find((item) => item.id === activeBetId.value) ||
+      value.bets?.find((item) => item.bettorId === currentUserId.value)
+    if (matchedBet) {
+      loadBetIntoState(value, matchedBet)
     } else {
       resetBet(value)
     }
@@ -258,6 +281,7 @@ export function useDashboard() {
     const saved = await saveBetToDatabase({
       roundId: round.value.id,
       bettorId: nextBet.bettorId,
+      betId: nextBet.id,
       bet: nextBet,
       legs: nextLegs,
       matches: []
@@ -273,18 +297,19 @@ export function useDashboard() {
     // no backend to persist to) — otherwise a failed save left the UI showing a
     // bet that was never saved.
     if (saved || !databaseEnabled.value) {
+      const existed = round.value.bets.some((item) => item.id === nextBet.id)
       bet.value = nextBet
       stake.value = Number(payload.stake)
       legs.value = nextLegs.map((leg, index) => ({
         ...leg,
         id: nextBet.selections[index]?.id || leg.id
       }))
+      activeBetId.value = nextBet.id
       round.value = {
         ...round.value,
-        bets: [
-          ...round.value.bets.filter((item) => item.bettorId !== nextBet.bettorId),
-          nextBet
-        ]
+        bets: existed
+          ? round.value.bets.map((item) => (item.id === nextBet.id ? nextBet : item))
+          : [...round.value.bets, nextBet]
       }
     }
     loading.value = false
@@ -324,19 +349,12 @@ export function useDashboard() {
     }))
     round.value = {
       ...round.value,
-      status: result.status === 'pending' ? round.value.status : 'settled',
-      bets: [...round.value.bets.filter((item) => item.bettorId !== bet.value.bettorId), bet.value]
-    }
-    let roundUpdateFailed = false
-    if (result.status !== 'pending' && databaseEnabled.value) {
-      roundUpdateFailed = !(await updateWeek(round.value.id, { status: 'settled' }))
+      bets: round.value.bets.map((item) => (item.id === bet.value.id ? bet.value : item))
     }
     notify(
-      roundUpdateFailed
-        ? `Bet settled as ${result.status}, but the round status could not be saved.`
-        : result.status === 'pending'
-          ? 'Bet updated. Resolve every selection to settle the round.'
-          : `Bet settled as ${result.status}.`
+      result.status === 'pending'
+        ? 'Bet updated. Resolve every selection to settle it.'
+        : `Bet settled as ${result.status}.`
     )
     return true
   }
@@ -355,7 +373,6 @@ export function useDashboard() {
     const value = await createWeek({
       week: round.value.week + 1,
       title: details.title || `Premier League week ${round.value.week + 1}`,
-      bettorId: details.bettorId || nextBettorId.value,
       stake: Number(details.stake) || 20,
       deadline: details.deadline
         ? new Date(details.deadline).toISOString()
@@ -408,15 +425,18 @@ export function useDashboard() {
     currentUserName,
     players: playersForWeek,
     assignableUsers,
+    userBets,
+    activeBetId,
     trackedMatches,
     canManageCurrentBet,
     isAdmin,
-    nextBettorId,
     leaders,
     money,
     loadDashboard,
     saveBet,
     settleBet,
+    selectBet,
+    startNewBet,
     addNewWeek,
     removeCurrentWeek
   }

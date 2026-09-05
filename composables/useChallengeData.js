@@ -25,9 +25,7 @@ function normalizeUser(user) {
 
 function toUiWeek(row, users = []) {
   const directory = users.map(normalizeUser).filter((user) => user.userId)
-  const participantIds = [row.bettor_id, ...(row.bets || []).map((bet) => bet.bettor_id)].filter(
-    Boolean
-  )
+  const participantIds = (row.bets || []).map((bet) => bet.bettor_id).filter(Boolean)
   const members = [...new Set(participantIds)].map((userId) => {
     const user = directory.find((item) => item.userId === userId)
     return {
@@ -41,7 +39,6 @@ function toUiWeek(row, users = []) {
     members.find((member) => member.userId === userId)?.displayName || 'Player'
   return {
     id: row.id,
-    bettorId: row.bettor_id,
     week: row.week,
     title: row.title,
     dates: new Date(row.deadline).toLocaleDateString('en-GB', {
@@ -50,14 +47,13 @@ function toUiWeek(row, users = []) {
       year: 'numeric'
     }),
     deadline: row.deadline,
-    bettor: memberName(row.bettor_id),
     stake: Number(row.stake),
     status: row.status,
     members,
     bets: (row.bets || []).map((dbBet) => ({
       id: dbBet.id || null,
       bettor: memberName(dbBet.bettor_id),
-      bettorId: dbBet.bettor_id || row.bettor_id,
+      bettorId: dbBet.bettor_id,
       type: dbBet.bet_type || 'Accumulator',
       stake: Number(dbBet.stake || row.stake),
       status: dbBet.status || 'pending',
@@ -210,7 +206,7 @@ export function useChallengeData() {
     }
   }
 
-  async function saveBetToDatabase({ roundId, bettorId, bet, legs, matches }) {
+  async function saveBetToDatabase({ roundId, bettorId, betId, bet, legs, matches }) {
     if (!client) return false
     if (!roundId || !bettorId) {
       lastError.value = 'Create a week before saving a bet.'
@@ -227,11 +223,9 @@ export function useChallengeData() {
         combined_odds: combinedOdds,
         status: bet.status || 'pending'
       }
-      const { data: savedBet, error: betError } = await client
-        .from('bets')
-        .upsert(payload, { onConflict: 'week_id,bettor_id' })
-        .select('id')
-        .single()
+      const { data: savedBet, error: betError } = betId
+        ? await client.from('bets').update(payload).eq('id', betId).select('id').single()
+        : await client.from('bets').insert(payload).select('id').single()
       if (betError) throw betError
       const matchRows = legs.map((leg, index) => {
         const source = matches[index]
@@ -353,7 +347,6 @@ export function useChallengeData() {
         id: weekId,
         week: 1,
         title,
-        bettor_id: user.id,
         stake,
         deadline,
         status: 'in_progress'
@@ -369,7 +362,6 @@ export function useChallengeData() {
           id: weekId,
           week: 1,
           title,
-          bettor_id: user.id,
           stake,
           deadline,
           status: 'in_progress',
@@ -386,7 +378,7 @@ export function useChallengeData() {
     }
   }
 
-  async function createWeek({ week, title, bettorId, stake, deadline }) {
+  async function createWeek({ week, title, stake, deadline }) {
     if (!client) return null
     loading.value = true
     try {
@@ -395,7 +387,6 @@ export function useChallengeData() {
         .insert({
           week,
           title,
-          bettor_id: bettorId,
           stake,
           deadline,
           status: 'in_progress'
@@ -432,12 +423,7 @@ export function useChallengeData() {
 
   async function updateWeek(weekId, changes) {
     if (!client || !weekId) return false
-    const databaseChanges = { ...changes }
-    if ('bettorId' in databaseChanges) {
-      databaseChanges.bettor_id = databaseChanges.bettorId
-      delete databaseChanges.bettorId
-    }
-    const { error } = await client.from('weeks').update(databaseChanges).eq('id', weekId)
+    const { error } = await client.from('weeks').update(changes).eq('id', weekId)
     if (error) {
       lastError.value = error.message
       return false

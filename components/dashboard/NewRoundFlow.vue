@@ -1,28 +1,16 @@
 <script setup>
 const props = defineProps({
   open: Boolean,
-  loading: Boolean,
-  members: { type: Array, default: () => [] },
-  users: { type: Array, default: () => [] },
-  defaultBettorId: { type: String, default: '' }
+  loading: Boolean
 })
 const emit = defineEmits(['close', 'save'])
-const form = ref({ title: '', stake: 20, deadline: '', bettorId: '' })
-const availableUsers = computed(() => {
-  const users = [...props.users, ...props.members]
-  return [...new Map(users.map((user) => [user.userId, user])).values()]
-})
+const form = ref({ title: '', stake: 20, deadline: '' })
 
 watch(
   () => props.open,
   (open) => {
     if (!open) return
-    form.value = {
-      title: '',
-      stake: 20,
-      deadline: '',
-      bettorId: props.defaultBettorId || availableUsers.value[0]?.userId || ''
-    }
+    form.value = { title: '', stake: 20, deadline: '' }
   }
 )
 
@@ -55,20 +43,10 @@ function save() {
         </button>
       </header>
       <div class="flow-body">
-        <p class="flow-intro">Set up the next Premier League turn.</p>
+        <p class="flow-intro">Set up the next Premier League week.</p>
         <label>Title<input v-model="form.title" placeholder="Premier League week" /></label
         ><label>Stake (€)<input v-model.number="form.stake" type="number" min="1" /></label
-        ><label v-if="availableUsers.length"
-          >Assign this round to<select v-model="form.bettorId" required>
-            <option v-for="user in availableUsers" :key="user.userId" :value="user.userId">
-              {{ user.displayName }}{{ user.email ? ` · ${user.email}` : '' }}
-            </option>
-          </select></label
-        >
-        <p v-else class="flow-hint">
-          Add players from Manage before assigning this round to someone else.
-        </p>
-        <label>Deadline<input v-model="form.deadline" type="datetime-local" /></label>
+        ><label>Deadline<input v-model="form.deadline" type="datetime-local" /></label>
       </div>
       <footer class="flow-footer">
         <button class="text-button back-button" type="button" @click="$emit('close')">Cancel</button

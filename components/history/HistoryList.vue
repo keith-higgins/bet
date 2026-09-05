@@ -119,11 +119,11 @@ function signedMoney(value) {
           :aria-expanded="expanded === item.id"
           @click="toggle(item.id)"
         >
-          <span class="history-week-tag">W{{ item.week }}</span>
           <span class="history-week-main">
-            <strong>{{ (filteredBets(item)[0] || {}).bettor || item.bettor || 'Player' }}</strong>
+            <strong>{{ item.title }}</strong>
             <small
-              >{{ item.dates }} &middot; {{ money(item.stake) }} stake &middot;
+              >{{ (filteredBets(item)[0] || {}).bettor || 'Player' }} &middot; {{ item.dates }}
+              &middot; {{ money(item.stake) }} stake &middot;
               {{ (filteredBets(item)[0]?.selections || []).length }} legs</small
             >
           </span>

@@ -6,19 +6,13 @@ const diagnosticsOpen = ref(false)
 
 const newWeekTitle = ref('')
 const newWeekStake = ref(20)
-const newWeekBettorId = ref('')
 const creating = ref(false)
-
-watchEffect(() => {
-  if (!newWeekBettorId.value) newWeekBettorId.value = dashboard.nextBettorId
-})
 
 async function createWeek() {
   creating.value = true
   const created = await dashboard.addNewWeek({
     title: newWeekTitle.value.trim(),
-    stake: newWeekStake.value,
-    bettorId: newWeekBettorId.value
+    stake: newWeekStake.value
   })
   if (created) newWeekTitle.value = ''
   creating.value = false
@@ -58,18 +52,6 @@ async function playerCreated() {
         <label class="manage-field">
           <span>Stake (&euro;)</span>
           <input v-model.number="newWeekStake" type="number" min="1" />
-        </label>
-        <label class="manage-field">
-          <span>Bettor</span>
-          <select v-model="newWeekBettorId">
-            <option
-              v-for="user in dashboard.assignableUsers"
-              :key="user.userId"
-              :value="user.userId"
-            >
-              {{ user.displayName }}
-            </option>
-          </select>
         </label>
       </div>
       <button

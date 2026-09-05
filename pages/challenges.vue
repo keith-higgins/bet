@@ -1,5 +1,4 @@
 <script setup>
-const { players } = usePlayerContext()
 const {
   loadRounds,
   updateWeek,
@@ -42,7 +41,8 @@ async function saveBet(betDetails) {
   if (!item) return
   const saved = await saveBetToDatabase({
     roundId: item.id,
-    bettorId: editingBet.value.bettorId || item.bettorId,
+    bettorId: editingBet.value.bettorId,
+    betId: editingBet.value.id,
     bet: editingBet.value,
     legs: betDetails.legs,
     matches: []
@@ -58,7 +58,7 @@ function startSettlement(item, bet) {
 }
 async function saveSettlement(statuses) {
   if (!settlingBet.value) return
-  const { item, bet } = settlingBet.value
+  const { bet } = settlingBet.value
   const combinedOdds = bet.selections.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)
   const result = await settleBetInDatabase({
     betId: bet.id,
@@ -70,16 +70,12 @@ async function saveSettlement(statuses) {
     notice.value = lastError.value
     return
   }
-  const weekUpdateFailed =
-    result.status !== 'pending' && !(await updateWeek(item.id, { status: 'settled' }))
   settlingBet.value = null
-  notice.value = weekUpdateFailed
-    ? `Bet settled as ${result.status}, but the week status could not be saved.`
-    : `Bet settled as ${result.status}.`
+  notice.value = `Bet settled as ${result.status}.`
   await refresh()
 }
 async function remove(item) {
-  if (!confirm(`Delete Week ${item.week} and all bets?`)) return
+  if (!confirm(`Delete "${item.title}" and all its bets?`)) return
   if (await deleteWeek(item.id)) {
     await refresh()
     notice.value = 'Week deleted.'
@@ -96,14 +92,9 @@ async function create(details) {
     } else notice.value = lastError.value
     return
   }
-  const nextBettorId =
-    assignableUsers.value.find((member) => member.userId !== current.bettorId)?.userId ||
-    current?.members?.find((member) => member.userId !== current.bettorId)?.userId ||
-    current?.bettorId
   const item = await createWeek({
     week: (current?.week || 0) + 1,
     title: details.title || `Premier League week ${(current?.week || 0) + 1}`,
-    bettorId: details.bettorId || nextBettorId,
     stake: Number(details.stake) || 20,
     deadline: details.deadline
       ? new Date(details.deadline).toISOString()
@@ -137,7 +128,6 @@ onMounted(refresh)
           :key="item.id"
           :item="item"
           :money="money"
-          :users="assignableUsers"
           @save="(changes) => save(item, changes)"
           @edit-bet="editingBet = $event"
           @settle-bet="startSettlement(item, $event)"
@@ -152,12 +142,6 @@ onMounted(refresh)
     <NewRoundFlow
       :open="creating"
       :loading="loading"
-      :members="rounds[0]?.members || players"
-      :users="assignableUsers"
-      :default-bettor-id="
-        rounds[0]?.members?.find((member) => member.userId !== rounds[0]?.bettorId)?.userId ||
-        rounds[0]?.bettorId
-      "
       @close="creating = false"
       @save="create"
     />

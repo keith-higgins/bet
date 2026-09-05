@@ -2,8 +2,7 @@
 const route = useRoute()
 const { currentUserName } = usePlayerContext()
 const { liveCount, upcomingCount } = useLiveStatus()
-const { weekNumber, weekTitle, isYourTurn, isSettled, totalWeeksRecorded, playerCount } =
-  useAppMeta()
+const { weekTitle, isSettled, totalWeeksRecorded, playerCount } = useAppMeta()
 
 function initials(name) {
   return (name || 'Player')
@@ -33,9 +32,8 @@ const pageMeta = computed(() => {
   if (route.path === '/league') return `${playerCount.value} PLAYERS`
   if (route.path === '/admin') return 'ADMIN TOOLS'
   if (route.path === '/account') return currentUserName.value.toUpperCase()
-  if (!weekNumber.value) return ''
-  if (isSettled.value) return `SETTLED · WEEK ${weekNumber.value}`
-  return isYourTurn.value ? `YOUR TURN · WEEK ${weekNumber.value}` : `WEEK ${weekNumber.value}`
+  if (!weekTitle.value) return ''
+  return isSettled.value ? 'SETTLED' : ''
 })
 </script>
 

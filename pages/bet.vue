@@ -21,12 +21,32 @@ function blankLeg() {
   return { match: '', market: '', pick: '', odds: '', status: 'pending' }
 }
 
-watchEffect(() => {
-  if (draftLegs.value.length) return
-  draftStake.value = dashboard.stake || 20
-  draftLegs.value = dashboard.legs.length
-    ? dashboard.legs.map((leg) => ({ ...leg, odds: decimalToFractional(leg.odds) }))
-    : [blankLeg()]
+// Re-sync the draft whenever the active bet changes — switching tabs while
+// already on this screen doesn't remount it, so this can't be a one-shot seed.
+watch(
+  () => dashboard.activeBetId,
+  () => {
+    draftStake.value = dashboard.stake || 20
+    draftLegs.value = dashboard.legs.length
+      ? dashboard.legs.map((leg) => ({ ...leg, odds: decimalToFractional(leg.odds) }))
+      : [blankLeg()]
+    openLeg.value = 0
+    liveStatus.value = {}
+    entryMode.value = dashboard.legs.length ? 'manual' : 'upload'
+  },
+  { immediate: true }
+)
+
+const betPosition = computed(() => {
+  const savedCount = dashboard.userBets.length
+  if (!dashboard.activeBetId) return { n: savedCount + 1, total: savedCount + 1 }
+  const index = dashboard.userBets.findIndex((item) => item.id === dashboard.activeBetId)
+  return { n: index === -1 ? savedCount + 1 : index + 1, total: savedCount }
+})
+const weekStakedTotal = computed(() => {
+  const others = dashboard.userBets.filter((item) => item.id !== dashboard.activeBetId)
+  const othersTotal = others.reduce((total, item) => total + Number(item.stake || 0), 0)
+  return othersTotal + Number(draftStake.value || 0)
 })
 
 async function resolveLiveTracking(index, leg) {
@@ -174,7 +194,7 @@ function toggleLeg(index) {
   openLeg.value = openLeg.value === index ? -1 : index
 }
 
-async function save() {
+async function save(andStartAnother = false) {
   error.value = ''
   if (!draftStake.value || Number(draftStake.value) < 1) {
     error.value = 'Enter a stake of at least €1.'
@@ -195,7 +215,9 @@ async function save() {
     legs: draftLegs.value.map((leg) => ({ ...leg, odds: fractionalToDecimal(leg.odds) }))
   })
   saving.value = false
-  if (saved) navigateTo('/')
+  if (!saved) return
+  if (andStartAnother) dashboard.startNewBet()
+  else navigateTo('/')
 }
 </script>
 
@@ -204,17 +226,41 @@ async function save() {
     <div class="builder-header">
       <div>
         <p class="screen-overline" style="margin-bottom: 9px">
-          WEEK {{ dashboard.round.week }} &middot; ONE ACCA PER ROUND
+          {{ dashboard.round.title }} &middot; BET {{ betPosition.n }} OF {{ betPosition.total }}
         </p>
-        <h2 class="builder-title">Build your acca</h2>
+        <h2 class="builder-title">Build a bet</h2>
       </div>
       <button class="builder-close" type="button" aria-label="Close" @click="navigateTo('/')">
         &times;
       </button>
     </div>
 
+    <div v-if="dashboard.userBets.length" class="bet-tabs">
+      <button
+        v-for="(item, index) in dashboard.userBets"
+        :key="item.id"
+        type="button"
+        class="pill-chip bet-tab"
+        :class="{ active: item.id === dashboard.activeBetId }"
+        @click="dashboard.selectBet(item.id)"
+      >
+        Bet {{ index + 1 }}
+      </button>
+      <button
+        type="button"
+        class="pill-chip bet-tab bet-tab-new"
+        :class="{ active: !dashboard.activeBetId }"
+        @click="dashboard.startNewBet()"
+      >
+        &#65291; New bet
+      </button>
+    </div>
+
     <div class="stake-card">
-      <p class="builder-field-label">STAKE</p>
+      <div class="builder-summary-row" style="margin-bottom: 0">
+        <p class="builder-field-label">STAKE ON THIS BET</p>
+        <span class="mono-meta">{{ dashboard.money(weekStakedTotal) }} ACROSS {{ betPosition.total }} BET{{ betPosition.total === 1 ? '' : 'S' }}</span>
+      </div>
       <div class="stake-stepper">
         <button type="button" class="stepper-button" @click="adjustStake(-5)">&minus;</button>
         <div class="stake-value">{{ dashboard.money(draftStake) }}</div>
@@ -290,9 +336,18 @@ async function save() {
           }}</strong>
         </div>
       </div>
-      <button class="hero-button" type="button" :disabled="saving" @click="save">
+      <button class="hero-button" type="button" :disabled="saving" @click="save(false)">
         <LoadingSpinner v-if="saving" label="Saving…" inline small />
         <template v-else>Save bet</template>
+      </button>
+      <button
+        class="builder-add-leg"
+        style="margin-top: 10px"
+        type="button"
+        :disabled="saving"
+        @click="save(true)"
+      >
+        Save and start another bet
       </button>
     </div>
   </div>
