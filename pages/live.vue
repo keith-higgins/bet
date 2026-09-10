@@ -1,11 +1,13 @@
 <script setup>
 const dashboard = reactive(useDashboard())
 
-// Each of the user's bets gets its own card: one ACCA status bar for the whole
-// bet (it's one bet, however many legs), with the per-leg breakdown living in
-// the match rows nested inside that same card — not a pip per leg up top.
+// Every bet placed this round gets its own card (not just the viewer's own —
+// this mirrors the round-wide match centre on Home, so a friend's bet still
+// shows up here instead of only appearing for them): one ACCA status bar for
+// the whole bet (it's one bet, however many legs), with the per-leg breakdown
+// living in the match rows nested inside that same card — not a pip per leg up top.
 const betCards = computed(() =>
-  dashboard.userBets
+  dashboard.round.bets
     .map((currentBet) => {
       const legs = (currentBet.selections || []).filter((leg) => leg.matchId)
       if (!legs.length) return null
@@ -27,6 +29,7 @@ const betCards = computed(() =>
 
       return {
         id: currentBet.id,
+        bettor: currentBet.bettor,
         landedCount,
         toGoCount,
         legPips,
@@ -47,7 +50,9 @@ const betCards = computed(() =>
     <div v-for="card in betCards" :key="card.id" class="bet-live-group">
       <div class="acca-status-card">
         <div>
-          <p class="builder-field-label" style="margin-bottom: 7px">ACCA STATUS</p>
+          <p class="builder-field-label" style="margin-bottom: 7px">
+            {{ card.bettor ? `${card.bettor}'S ACCA STATUS` : 'ACCA STATUS' }}
+          </p>
           <strong>{{ card.landedCount }} landed &middot; {{ card.toGoCount }} to go</strong>
         </div>
         <div class="acca-status-pips">
