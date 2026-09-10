@@ -21,6 +21,11 @@ function goEditBet(betId) {
   dashboard.selectBet(betId)
   navigateTo('/bet')
 }
+
+function goSettleBet(betId) {
+  dashboard.selectBet(betId)
+  settlementOpen.value = true
+}
 </script>
 
 <template>
@@ -56,9 +61,11 @@ function goEditBet(betId) {
         v-if="dashboard.round.id"
         :bets="dashboard.round.bets"
         :current-user-id="dashboard.currentUserId"
+        :is-admin="dashboard.isAdmin"
         :is-settled="dashboard.round.status === 'settled'"
         :money="dashboard.money"
         @edit="goEditBet"
+        @settle="goSettleBet"
         @new-bet="goBuildNewBet"
       />
       <button

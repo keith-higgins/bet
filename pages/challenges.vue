@@ -1,4 +1,5 @@
 <script setup>
+import { resolveCombinedOdds } from '~/lib/odds'
 const {
   loadRounds,
   updateWeek,
@@ -59,7 +60,7 @@ function startSettlement(item, bet) {
 async function saveSettlement(statuses) {
   if (!settlingBet.value) return
   const { bet } = settlingBet.value
-  const combinedOdds = bet.selections.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)
+  const combinedOdds = resolveCombinedOdds(bet, bet.selections)
   const result = await settleBetInDatabase({
     betId: bet.id,
     selectionStatuses: statuses,

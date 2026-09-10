@@ -1,4 +1,5 @@
 <script setup>
+const props = defineProps({ betType: { type: String, default: 'Accumulator' } })
 const emit = defineEmits(['parsed'])
 const fileInput = ref(null)
 const previewUrl = ref('')
@@ -20,6 +21,7 @@ async function handleFile(event) {
   try {
     const formData = new FormData()
     formData.append('image', file)
+    formData.append('betType', props.betType)
     const result = await $fetch('/api/betslip/parse', { method: 'POST', body: formData })
     emit('parsed', result)
   } catch (err) {

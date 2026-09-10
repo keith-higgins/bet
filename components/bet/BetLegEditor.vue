@@ -14,7 +14,11 @@ const legMarkets = ref({})
 function update(index, key, value) {
   emit(
     'update:legs',
-    props.legs.map((leg, itemIndex) => (itemIndex === index ? { ...leg, [key]: value } : leg))
+    props.legs.map((leg, itemIndex) =>
+      itemIndex === index
+        ? { ...leg, [key]: value, ...(key === 'odds' ? { oddsFromSlip: false } : {}) }
+        : leg
+    )
   )
 }
 function patchLeg(index, patch) {
@@ -25,6 +29,7 @@ function patchLeg(index, patch) {
 }
 function updateMatch(index, value) {
   legMarkets.value = { ...legMarkets.value, [index]: null }
+  const leg = props.legs[index]
   patchLeg(index, {
     match: value,
     matchId: '',
@@ -33,12 +38,13 @@ function updateMatch(index, value) {
     away: '',
     market: '',
     pick: '',
-    odds: ''
+    ...(leg?.oddsFromSlip ? {} : { odds: '' })
   })
 }
 function updateMarket(index, value) {
+  const leg = props.legs[index]
   const patch = { market: value, pick: '' }
-  if (legMarkets.value[index]) patch.odds = ''
+  if (legMarkets.value[index] && !leg?.oddsFromSlip) patch.odds = ''
   patchLeg(index, patch)
 }
 function handleMatchInput(index, value) {
@@ -106,6 +112,7 @@ async function resolveLiveTracking(index, match) {
 function selectPaddyPowerMatch(index, match) {
   clearTimeout(searchTimers[index])
   legMarkets.value = { ...legMarkets.value, [index]: match.markets || [] }
+  const leg = props.legs[index]
   patchLeg(index, {
     match: match.name,
     matchId: '',
@@ -116,7 +123,7 @@ function selectPaddyPowerMatch(index, match) {
     away: match.away,
     market: '',
     pick: '',
-    odds: ''
+    ...(leg?.oddsFromSlip ? {} : { odds: '' })
   })
   results.value = { ...results.value, [index]: [] }
   resolveLiveTracking(index, match)
@@ -124,6 +131,7 @@ function selectPaddyPowerMatch(index, match) {
 function selectFootballFixture(index, fixture) {
   clearTimeout(searchTimers[index])
   legMarkets.value = { ...legMarkets.value, [index]: null }
+  const leg = props.legs[index]
   patchLeg(index, {
     match: fixture.label,
     matchId: fixture.id,
@@ -134,7 +142,7 @@ function selectFootballFixture(index, fixture) {
     away: fixture.away,
     market: '',
     pick: '',
-    odds: ''
+    ...(leg?.oddsFromSlip ? {} : { odds: '' })
   })
   results.value = { ...results.value, [index]: [] }
 }
@@ -149,7 +157,9 @@ function updatePick(index, value) {
     const market = markets.find((item) => item.name === leg.market)
     const selection = market?.selections.find((item) => item.name === value)
     if (selection) {
-      patchLeg(index, { pick: value, odds: paddyPowerOddsToFractional(selection.odds) })
+      const patch = { pick: value }
+      if (!leg.oddsFromSlip) patch.odds = paddyPowerOddsToFractional(selection.odds)
+      patchLeg(index, patch)
       return
     }
   }

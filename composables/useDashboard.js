@@ -1,3 +1,5 @@
+import { resolveCombinedOdds } from '~/lib/odds'
+
 export function useDashboard() {
   const { players, currentUserId, currentUserName, isAdmin } = usePlayerContext()
   const {
@@ -39,9 +41,7 @@ export function useDashboard() {
   let toastTimer
 
   const settled = computed(() => ['won', 'lost'].includes(bet.value.status))
-  const combinedOdds = computed(() =>
-    legs.value.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)
-  )
+  const combinedOdds = computed(() => resolveCombinedOdds(bet.value, legs.value))
   const potentialReturn = computed(() => Number(stake.value || 0) * combinedOdds.value)
   const allRounds = computed(() => [round.value, ...previousRounds.value])
   const userBets = computed(() =>
@@ -57,15 +57,24 @@ export function useDashboard() {
         const weekBets = (item.bets || []).filter((currentBet) => currentBet.bettorId === playerId)
         if (!weekBets.length) return null
         const pending = weekBets.some((currentBet) => !['won', 'lost'].includes(currentBet.status))
-        const net = weekBets.reduce(
-          (total, currentBet) =>
-            total +
-            (['won', 'lost'].includes(currentBet.status)
-              ? Number(currentBet.actualReturn || 0) - Number(currentBet.stake || 0)
-              : 0),
+        const settledWeekBets = weekBets.filter((currentBet) =>
+          ['won', 'lost'].includes(currentBet.status)
+        )
+        const grossReturn = settledWeekBets.reduce(
+          (total, currentBet) => total + Number(currentBet.actualReturn || 0),
           0
         )
-        return { week: item.week, status: pending ? 'pending' : net > 0 ? 'won' : 'lost', net }
+        const staked = settledWeekBets.reduce(
+          (total, currentBet) => total + Number(currentBet.stake || 0),
+          0
+        )
+        const net = grossReturn - staked
+        return {
+          week: item.week,
+          status: pending ? 'pending' : net > 0 ? 'won' : 'lost',
+          net,
+          grossReturn
+        }
       })
       .filter(Boolean)
   }
@@ -91,9 +100,16 @@ export function useDashboard() {
       0
     )
   )
-  const personalBestReturn = computed(() =>
-    Math.max(0, ...personalSettledWeeks.value.map((result) => result.net))
-  )
+  // "Best week" is the week with the highest net profit (that's what makes it your
+  // best), but the figure shown is that week's gross win amount, not the net-of-stake
+  // profit — "net profit" is already its own separate stat below.
+  const personalBestReturn = computed(() => {
+    const best = personalSettledWeeks.value.reduce(
+      (top, result) => (!top || result.net > top.net ? result : top),
+      null
+    )
+    return best && best.net > 0 ? best.grossReturn : 0
+  })
   const personalRecord = computed(() => ({
     won: personalSettledWeeks.value.filter((result) => result.status === 'won').length,
     lost: personalSettledWeeks.value.filter((result) => result.status === 'lost').length
@@ -112,11 +128,18 @@ export function useDashboard() {
   )
   const trackedMatches = computed(() => {
     const matches = round.value.bets.flatMap((currentBet) => currentBet.selections || [])
-    return [
-      ...new Map(
-        matches.filter((match) => match.matchId).map((match) => [match.matchId, match])
-      ).values()
-    ]
+    // A Bet Builder puts several legs against the SAME matchId (different markets on one
+    // game) — collect every leg's pick against that match instead of the last one winning.
+    const grouped = new Map()
+    matches
+      .filter((match) => match.matchId)
+      .forEach((match) => {
+        const pick = { market: match.market, pick: match.pick, status: match.status }
+        const existing = grouped.get(match.matchId)
+        if (existing) existing.picks.push(pick)
+        else grouped.set(match.matchId, { ...match, picks: [pick] })
+      })
+    return [...grouped.values()]
   })
   const canManageCurrentBet = computed(
     () => !databaseEnabled.value || Boolean(round.value.id)
@@ -256,13 +279,17 @@ export function useDashboard() {
       return false
     }
     loading.value = true
+    const betType = payload.betType || bet.value.type || 'Accumulator'
     const nextLegs = payload.legs.map((leg) => ({
       ...leg,
-      odds: Number(leg.odds),
+      odds: betType === 'BetBuilder' ? 1 : Number(leg.odds),
       status: 'pending'
     }))
     const nextBet = {
       ...bet.value,
+      type: betType,
+      combinedOdds:
+        betType === 'BetBuilder' ? Number(payload.combinedOdds) || 1 : bet.value.combinedOdds,
       stake: Number(payload.stake),
       selections: nextLegs.map((leg, index) => ({
         id: bet.value.selections[index]?.id || `leg-${index}`,

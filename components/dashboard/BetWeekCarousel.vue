@@ -1,13 +1,19 @@
 <script setup>
-import { decimalToFractional } from '~/lib/odds'
+import { decimalToFractional, resolveCombinedOdds } from '~/lib/odds'
 
 const props = defineProps({
   bets: { type: Array, default: () => [] },
   currentUserId: { type: String, default: '' },
+  isAdmin: Boolean,
   isSettled: Boolean,
   money: { type: Function, required: true }
 })
-const emit = defineEmits(['edit', 'new-bet'])
+const emit = defineEmits(['edit', 'settle', 'new-bet'])
+
+const expanded = ref({})
+function toggleExpanded(id) {
+  expanded.value = { ...expanded.value, [id]: !expanded.value[id] }
+}
 
 function initialsOf(name) {
   return (name || 'P')
@@ -21,11 +27,9 @@ function initialsOf(name) {
 const cards = computed(() =>
   props.bets.map((bet, index) => {
     const isOwn = !props.currentUserId || bet.bettorId === props.currentUserId
+    const canManage = isOwn || props.isAdmin
     const legCount = bet.selections.length
-    const combinedOdds = bet.selections.reduce(
-      (total, leg) => total * (Number(leg.odds) || 1),
-      1
-    )
+    const combinedOdds = resolveCombinedOdds(bet, bet.selections)
     const isWon = bet.status === 'won'
     const isLost = bet.status === 'lost'
     const returnValue = isWon
@@ -36,6 +40,8 @@ const cards = computed(() =>
     return {
       id: bet.id,
       isOwn,
+      canManage,
+      type: bet.type || 'Accumulator',
       owner: bet.bettor || 'Player',
       initials: initialsOf(bet.bettor),
       n: index + 1,
@@ -92,17 +98,47 @@ const stillRiding = computed(() =>
             <strong>{{ card.legCount ? money(card.returnValue) : '—' }}</strong>
           </div>
         </div>
-        <div v-if="card.legCount" class="bet-carousel-pips">
-          <span v-for="(leg, index) in card.legs" :key="index" :class="leg.status" />
-        </div>
         <button
-          v-if="card.isOwn"
+          v-if="card.legCount"
           type="button"
-          class="hero-button bet-carousel-action"
-          @click="emit('edit', card.id)"
+          class="bet-carousel-pips"
+          :aria-expanded="Boolean(expanded[card.id])"
+          :aria-label="expanded[card.id] ? 'Hide selections' : 'Show selections'"
+          @click="toggleExpanded(card.id)"
         >
-          {{ card.legCount ? 'Edit bet' : 'Add a selection' }}
+          <span v-for="(leg, index) in card.legs" :key="index" :class="leg.status" />
         </button>
+        <div v-if="card.legCount && expanded[card.id]" class="bet-carousel-legs">
+          <p v-if="card.type === 'BetBuilder'" class="bet-carousel-legs-match">
+            {{ card.legs[0]?.match || 'Selection' }}
+          </p>
+          <div v-for="(leg, index) in card.legs" :key="index" class="bet-carousel-leg" :class="leg.status">
+            <span v-if="card.type !== 'BetBuilder'" class="bet-carousel-leg-match"
+              >{{ leg.match || 'Selection ' + (index + 1) }}</span
+            >
+            <span class="bet-carousel-leg-detail">{{ leg.market }} &middot; {{ leg.pick }}</span>
+            <span v-if="card.type !== 'BetBuilder'" class="bet-carousel-leg-odds">{{
+              decimalToFractional(Number(leg.odds) || 1)
+            }}</span>
+          </div>
+        </div>
+        <div v-if="card.canManage" class="bet-carousel-actions">
+          <button
+            type="button"
+            class="hero-button bet-carousel-action"
+            @click="emit('edit', card.id)"
+          >
+            {{ card.legCount ? 'Edit bet' : 'Add a selection' }}
+          </button>
+          <button
+            v-if="!card.isOwn && card.legCount"
+            type="button"
+            class="hero-button bet-carousel-action outline"
+            @click="emit('settle', card.id)"
+          >
+            Settle
+          </button>
+        </div>
         <span v-else class="bet-carousel-view">View only</span>
       </div>
       <button

@@ -91,24 +91,95 @@ Also extract the total stake amount as a number if visible, in "stake" (null if 
 Only include actual bet selections, ignore navigation chrome, balances, and promo banners.`
 }
 
+function canonicalizeMarket(rawMarket) {
+  // Snap onto the app's canonical market label (e.g. "Both teams to score") whenever
+  // this market maps onto one of our settlement categories, so the market/pick pill
+  // chips — which only recognise those exact labels — highlight correctly. Bet Builder
+  // player-prop markets (e.g. "To score or assist") won't match anything here and are
+  // kept verbatim, same as any other market outside our settlement categories.
+  return MARKET_UI_VALUES[resolveMarketDatabaseValue(rawMarket)] || rawMarket
+}
+
 function toLeg(raw) {
   const oddsFractional = paddyPowerOddsToFractional(raw.odds)
   const match = String(raw.match || '').trim()
   const { home, away } = getMatchTeams({ match })
   const rawMarket = String(raw.market || '').trim()
-  // Snap onto the app's canonical market label (e.g. "Both teams to score") whenever
-  // this market maps onto one of our settlement categories, so the market/pick pill
-  // chips — which only recognise those exact labels — highlight correctly.
-  const canonicalMarket = MARKET_UI_VALUES[resolveMarketDatabaseValue(rawMarket)]
   return {
     match,
     home,
     away,
     startsAt: raw.startsAt || '',
-    market: canonicalMarket || rawMarket,
+    market: canonicalizeMarket(rawMarket),
     pick: String(raw.pick || '').trim(),
     odds: isValidFractionalOdds(oddsFractional) ? oddsFractional : '1/2',
     status: 'pending'
+  }
+}
+
+const BUILDER_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    stake: { type: 'number', nullable: true },
+    match: { type: 'string' },
+    startsAt: { type: 'string', nullable: true },
+    combinedOdds: { type: 'string' },
+    legs: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          market: { type: 'string' },
+          pick: { type: 'string' }
+        },
+        required: ['market', 'pick']
+      }
+    }
+  },
+  required: ['match', 'combinedOdds', 'legs']
+}
+
+function buildBuilderPrompt() {
+  const today = new Date().toISOString().slice(0, 10)
+  return `You are reading a screenshot of a football "Bet Builder" (also called "Same Game Multi") bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet). Today's date is ${today} — resolve any relative dates ("Today", "Tomorrow") against that.
+
+A Bet Builder is different from a normal accumulator: it is ALL ONE MATCH with several markets combined into a single price. The layout is:
+1. A header naming the bet type and leg count, e.g. "Bet Builder (4 legs)", next to ONE combined odds figure for the whole bet, e.g. "11.75/1".
+2. The single match, printed ONCE, e.g. "Everton v Man Utd", followed by its kickoff date/time on the next line.
+3. A list of legs underneath, each with a player/team name (bold) and a market description below it (e.g. "Bruno Fernandes" / "To Score Or Assist", or "Man Utd Goalkeeper" / "Goalkeeper To Make 2 Or More Saves"). Individual legs do NOT show their own odds — only the one combined figure at the top applies.
+
+Extract:
+- match: the two teams from the match line, copied EXACTLY as printed, in "Home Team v Away Team" order (left is home, right is away).
+- startsAt: the kickoff date and time as an ISO 8601 string ("YYYY-MM-DDTHH:mm:00"), using the exact date/time printed. Null if not visible.
+- combinedOdds: the ONE combined odds figure for the whole bet builder (next to the "Bet Builder (N legs)" header), copied EXACTLY as displayed, character for character — do not convert or round it.
+- legs: one entry per row underneath the match, each with:
+  - market: the market description text (the second line of each row, e.g. "To Score Or Assist", "Shown A Card", "Goalkeeper To Make 2 Or More Saves")
+  - pick: the player/team/selection name (the bold first line of each row, e.g. "Bruno Fernandes", "Man Utd Goalkeeper"). If a row shows two names joined by an arrow/swap icon (a substitution-aware "either/or" selection, e.g. "Luke Shaw ⇄ Noussair Mazraoui"), copy both names exactly as shown, joined by " or ".
+  Scan the ENTIRE image top to bottom and include every leg listed — if the header states a leg count (e.g. "4 legs"), your legs array MUST contain exactly that many entries.
+Also extract the total stake amount as a number if visible, in "stake" (null if not visible).
+Only include actual bet legs, ignore navigation chrome, balances, and promo banners.`
+}
+
+function toBuilderResult(parsed) {
+  const match = String(parsed.match || '').trim()
+  const { home, away } = getMatchTeams({ match })
+  const combinedOdds = paddyPowerOddsToFractional(parsed.combinedOdds)
+  const legs = Array.isArray(parsed.legs)
+    ? parsed.legs
+        .map((raw) => ({
+          market: canonicalizeMarket(String(raw.market || '').trim()),
+          pick: String(raw.pick || '').trim()
+        }))
+        .filter((leg) => leg.market && leg.pick)
+    : []
+  return {
+    stake: Number.isFinite(Number(parsed.stake)) ? Number(parsed.stake) : null,
+    match,
+    home,
+    away,
+    startsAt: parsed.startsAt || '',
+    combinedOdds: isValidFractionalOdds(combinedOdds) ? combinedOdds : '',
+    legs
   }
 }
 
@@ -126,6 +197,8 @@ export default defineEventHandler(async (event) => {
   if (file.data.length > MAX_IMAGE_BYTES) {
     throw createError({ statusCode: 400, statusMessage: 'Image is too large (8MB max).' })
   }
+  const betTypeField = parts?.find((part) => part.name === 'betType')
+  const isBuilder = betTypeField?.data?.toString('utf8') === 'BetBuilder'
 
   const mimeType = file.type || 'image/png'
   const body = {
@@ -133,14 +206,14 @@ export default defineEventHandler(async (event) => {
       {
         role: 'user',
         parts: [
-          { text: buildPrompt() },
+          { text: isBuilder ? buildBuilderPrompt() : buildPrompt() },
           { inlineData: { mimeType, data: file.data.toString('base64') } }
         ]
       }
     ],
     generationConfig: {
       responseMimeType: 'application/json',
-      responseSchema: RESPONSE_SCHEMA,
+      responseSchema: isBuilder ? BUILDER_RESPONSE_SCHEMA : RESPONSE_SCHEMA,
       temperature: 0
     }
   }
@@ -157,6 +230,14 @@ export default defineEventHandler(async (event) => {
     parsed = JSON.parse(text)
   } catch {
     throw createError({ statusCode: 502, statusMessage: "Couldn't read that slip. Try a clearer screenshot or enter it manually." })
+  }
+
+  if (isBuilder) {
+    const builderResult = toBuilderResult(parsed)
+    if (!builderResult.match || !builderResult.combinedOdds || !builderResult.legs.length) {
+      throw createError({ statusCode: 422, statusMessage: "Couldn't find the match, combined odds, or any legs on that slip. Try a clearer screenshot or enter it manually." })
+    }
+    return builderResult
   }
 
   const legs = Array.isArray(parsed.legs)

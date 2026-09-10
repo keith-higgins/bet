@@ -1,5 +1,6 @@
 import { useSupabaseClient } from '~/lib/supabase'
 import { MARKET_UI_VALUES, resolveMarketDatabaseValue } from '~/lib/betting'
+import { resolveCombinedOdds } from '~/lib/odds'
 
 function toDatabaseMarket(market) {
   return resolveMarketDatabaseValue(market)
@@ -57,6 +58,7 @@ function toUiWeek(row, users = []) {
       type: dbBet.bet_type || 'Accumulator',
       stake: Number(dbBet.stake || row.stake),
       status: dbBet.status || 'pending',
+      combinedOdds: Number(dbBet.combined_odds || 0),
       actualReturn: dbBet.actual_return == null ? null : Number(dbBet.actual_return),
       selections: (dbBet.bet_selections || []).map((selection) => ({
         id: selection.id,
@@ -214,7 +216,7 @@ export function useChallengeData() {
     }
     loading.value = true
     try {
-      const combinedOdds = legs.reduce((total, leg) => total * (Number(leg.odds) || 1), 1)
+      const combinedOdds = resolveCombinedOdds(bet, legs)
       const payload = {
         week_id: roundId,
         bettor_id: bettorId,
@@ -268,7 +270,10 @@ export function useChallengeData() {
             match_id: matchIds[leg.matchId || matches[index]?.id || manualId],
             market: toDatabaseMarket(leg.market),
             pick: leg.pick,
-            odds: Number(leg.odds),
+            // Bet Builder legs don't carry individual odds (the bookmaker only prices the
+            // whole bet as one figure, stored on the bet itself) — a neutral placeholder
+            // keeps the NOT NULL column happy without affecting anything downstream.
+            odds: bet.type === 'BetBuilder' ? 1 : Number(leg.odds),
             status: leg.status || 'pending'
           }
         })

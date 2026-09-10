@@ -6,6 +6,7 @@ const props = defineProps({
 
 const { totalWeeksRecorded } = useAppMeta()
 const expanded = ref(null)
+const expandedBets = ref({})
 const statusFilter = ref('All')
 
 const allBets = computed(() => props.rounds.flatMap((round) => round.bets || []))
@@ -30,6 +31,10 @@ watchEffect(() => {
 
 function toggle(id) {
   expanded.value = expanded.value === id ? null : id
+}
+
+function toggleBet(id) {
+  expandedBets.value = { ...expandedBets.value, [id]: !expandedBets.value[id] }
 }
 
 function profit(bet) {
@@ -70,6 +75,25 @@ function scoreLabel(leg) {
 
 function signedMoney(value) {
   return (value > 0 ? '+' : value < 0 ? '−' : '') + props.money(Math.abs(value))
+}
+
+function weekSummaryLabel(item) {
+  const bets = filteredBets(item)
+  if (bets.length <= 1) {
+    const bet = bets[0]
+    return `${bet?.bettor || 'Player'} · ${item.dates} · ${props.money(item.stake)} stake · ${
+      (bet?.selections || []).length
+    } legs`
+  }
+  const totalStake = bets.reduce((total, bet) => total + Number(bet.stake || 0), 0)
+  const totalLegs = bets.reduce((total, bet) => total + (bet.selections || []).length, 0)
+  return `${bets.length} bets · ${item.dates} · ${props.money(totalStake)} staked · ${totalLegs} legs`
+}
+
+function betStatusLabel(bet) {
+  if (bet.status === 'won') return 'WON'
+  if (bet.status === 'lost') return 'LOST'
+  return (bet.selections || []).length ? 'PENDING' : 'NO BET'
 }
 </script>
 
@@ -121,11 +145,7 @@ function signedMoney(value) {
         >
           <span class="history-week-main">
             <strong>{{ item.title }}</strong>
-            <small
-              >{{ (filteredBets(item)[0] || {}).bettor || 'Player' }} &middot; {{ item.dates }}
-              &middot; {{ money(item.stake) }} stake &middot;
-              {{ (filteredBets(item)[0]?.selections || []).length }} legs</small
-            >
+            <small>{{ weekSummaryLabel(item) }}</small>
           </span>
           <span class="history-week-result">
             <strong
@@ -137,25 +157,52 @@ function signedMoney(value) {
         </button>
 
         <div v-if="expanded === item.id" class="history-week-body">
-          <div v-if="filteredBets(item).length">
-            <template v-for="bet in filteredBets(item)" :key="bet.id || bet.bettorId">
-              <div
-                v-for="(leg, index) in bet.selections || []"
-                :key="leg.id || index"
-                class="history-leg-row"
+          <div v-if="filteredBets(item).length" class="history-bet-groups">
+            <div
+              v-for="bet in filteredBets(item)"
+              :key="bet.id || bet.bettorId"
+              class="history-bet-group"
+            >
+              <button
+                type="button"
+                class="history-bet-summary"
+                :aria-expanded="Boolean(expandedBets[bet.id])"
+                @click="toggleBet(bet.id)"
               >
-                <span class="history-leg-index">{{ index + 1 }}</span>
-                <div class="history-leg-main">
-                  <div>{{ leg.match || 'Unlinked match' }}</div>
+                <span class="history-bet-main">
+                  <strong>{{ bet.bettor || 'Player' }}</strong>
                   <small
-                    >{{ leg.market }} &middot; {{ leg.pick }} &middot; {{ scoreLabel(leg) }}</small
+                    >{{ money(bet.stake) }} stake &middot; {{ (bet.selections || []).length }} legs</small
                   >
-                </div>
-                <span class="history-leg-status" :class="`status-${leg.status || 'pending'}`">{{
-                  (leg.status || 'pending').toUpperCase()
+                </span>
+                <span class="history-bet-status" :class="`status-${bet.status || 'pending'}`">{{
+                  betStatusLabel(bet)
                 }}</span>
+              </button>
+              <div v-if="expandedBets[bet.id]">
+                <p v-if="bet.type === 'BetBuilder'" class="history-bet-match">
+                  {{ (bet.selections || [])[0]?.match || 'Unlinked match' }}
+                </p>
+                <div
+                  v-for="(leg, index) in bet.selections || []"
+                  :key="leg.id || index"
+                  class="history-leg-row"
+                >
+                  <span class="history-leg-index">{{ index + 1 }}</span>
+                  <div class="history-leg-main">
+                    <div v-if="bet.type !== 'BetBuilder'">{{ leg.match || 'Unlinked match' }}</div>
+                    <small
+                      >{{ leg.market }} &middot; {{ leg.pick }}<template v-if="bet.type !== 'BetBuilder'">
+                        &middot; {{ scoreLabel(leg) }}</template
+                      ></small
+                    >
+                  </div>
+                  <span class="history-leg-status" :class="`status-${leg.status || 'pending'}`">{{
+                    (leg.status || 'pending').toUpperCase()
+                  }}</span>
+                </div>
               </div>
-            </template>
+            </div>
           </div>
           <p v-else class="acca-empty" style="padding: 16px">No bets match the selected filter.</p>
         </div>

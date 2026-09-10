@@ -52,9 +52,10 @@ function rowClass(match) {
   if (isLive(match)) return 'live'
   return 'pending'
 }
-function pickStatus(match) {
-  if (match.betStatus === 'won') return { label: 'ON TRACK', tone: 'won' }
-  if (match.betStatus === 'lost') return { label: 'LOST', tone: 'lost' }
+function pickStatus(match, pick) {
+  const status = pick ? pick.status : match.betStatus
+  if (status === 'won') return { label: 'ON TRACK', tone: 'won' }
+  if (status === 'lost') return { label: 'LOST', tone: 'lost' }
   if (isUpcoming(match)) return { label: 'UPCOMING', tone: 'upcoming' }
   return { label: 'PENDING', tone: 'pending' }
 }
@@ -94,14 +95,14 @@ watch(
           </div>
           <span class="match-preview-score">{{ scoreLine(match) }}</span>
         </div>
-        <div class="match-detailed-foot">
-          <span v-if="match.pick" class="match-pick"
-            ><template v-if="match.market">{{ match.market }} &middot; </template>Pick:
-            {{ match.pick }}</span
+        <div v-for="(pick, index) in match.picks" :key="index" class="match-detailed-foot">
+          <span v-if="pick.pick" class="match-pick"
+            ><template v-if="pick.market">{{ pick.market }} &middot; </template>Pick:
+            {{ pick.pick }}</span
           >
           <span v-else class="match-pick">&nbsp;</span>
-          <span class="status-pill" :class="pickStatus(match).tone">{{
-            pickStatus(match).label
+          <span class="status-pill" :class="pickStatus(match, pick).tone">{{
+            pickStatus(match, pick).label
           }}</span>
         </div>
       </template>
@@ -109,7 +110,9 @@ watch(
         <div class="match-preview-main">
           <strong>{{ match.home }} v {{ match.away }}</strong>
           <small
-            ><template v-if="match.market">{{ match.market }} &middot; </template
+            ><template v-if="match.picks?.length > 1"
+              >{{ match.picks.length }} picks &middot; </template
+            ><template v-else-if="match.market">{{ match.market }} &middot; </template
             >{{ stateLine(match) }}</small
           >
         </div>

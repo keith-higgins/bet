@@ -22,6 +22,7 @@ function applyParsedSlip(result) {
     market: leg.market,
     pick: leg.pick,
     odds: leg.odds,
+    oddsFromSlip: true,
     status: 'pending'
   }))
   entryMode.value = 'manual'

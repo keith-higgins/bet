@@ -1,5 +1,5 @@
 <script setup>
-import { decimalToFractional, fractionalToDecimal, isValidFractionalOdds } from '~/lib/odds'
+import { decimalToFractional, fractionalToDecimal, isValidFractionalOdds, resolveCombinedOdds } from '~/lib/odds'
 import { teamNamesMatch, normalizeTeamName, canonicalTeamName } from '~/lib/teamAliases'
 import { paddyPowerOddsToFractional, resolveMarketDatabaseValue } from '~/lib/betting'
 
@@ -11,14 +11,29 @@ onMounted(() => {
 
 const draftStake = ref(dashboard.stake || 20)
 const draftLegs = ref([])
+const draftBetType = ref(dashboard.bet.type || 'Accumulator')
+const draftCombinedOdds = ref('10/1')
 const openLeg = ref(0)
 const error = ref('')
 const saving = ref(false)
 const entryMode = ref(dashboard.legs.length ? 'manual' : 'upload')
 const liveStatus = ref({})
+// Bet Builder legs after the first don't search for their own match — they reuse
+// whichever Paddy Power market list the first leg's match search resolved.
+const builderMarkets = ref(null)
 
 function blankLeg() {
   return { match: '', market: '', pick: '', odds: '', status: 'pending' }
+}
+
+// In Bet Builder mode every leg shares the first leg's match — reuse it instead of
+// starting a fresh, unlinked leg.
+function nextLeg() {
+  if (draftBetType.value !== 'BetBuilder') return blankLeg()
+  const anchor = draftLegs.value[0]
+  if (!anchor?.match) return blankLeg()
+  const { match, matchId, provider, home, away, startsAt, competition } = anchor
+  return { match, matchId, provider, home, away, startsAt, competition, market: '', pick: '', odds: '', status: 'pending' }
 }
 
 // Re-sync the draft whenever the active bet changes — switching tabs while
@@ -27,6 +42,11 @@ watch(
   () => dashboard.activeBetId,
   () => {
     draftStake.value = dashboard.stake || 20
+    draftBetType.value = dashboard.bet.type || 'Accumulator'
+    draftCombinedOdds.value =
+      draftBetType.value === 'BetBuilder' && dashboard.bet.combinedOdds
+        ? decimalToFractional(dashboard.bet.combinedOdds)
+        : '10/1'
     draftLegs.value = dashboard.legs.length
       ? dashboard.legs.map((leg) => ({ ...leg, odds: decimalToFractional(leg.odds) }))
       : [blankLeg()]
@@ -87,9 +107,10 @@ async function resolveLiveTracking(index, leg) {
   }
 }
 
-// Snaps an OCR'd market/pick onto Paddy Power's current odds when we can find the
-// same fixture there — this fixes up settlement categorization (which relies on PP's
-// exact market labels) and replaces the slip's odds with live ones.
+// Snaps an OCR'd market/pick onto Paddy Power's canonical selection name when we can
+// find the same fixture there — this fixes up settlement categorization (which relies
+// on PP's exact market labels). Odds extracted from a screenshot are authoritative and
+// are only replaced with a live price when they didn't come from a screenshot.
 async function resolvePaddyPowerMarket(index, leg) {
   if (!leg.home || !leg.away) return
   try {
@@ -119,36 +140,81 @@ async function resolvePaddyPowerMarket(index, leg) {
     )
     if (!selection) return
 
-    const odds = paddyPowerOddsToFractional(selection.odds)
-    if (!isValidFractionalOdds(odds)) return
-
     if (draftLegs.value[index]?.match === leg.match) {
-      draftLegs.value = draftLegs.value.map((item, i) =>
-        // Keep our already-canonicalized market label (matches the pill chip text) —
-        // only pick/odds/competition come from Paddy Power's live data.
-        i === index
-          ? {
-              ...item,
-              pick: selection.name,
-              odds,
-              competition: found.competition,
-              startsAt: found.startsAt
-            }
-          : item
-      )
+      const current = draftLegs.value[index]
+      const liveOdds = paddyPowerOddsToFractional(selection.odds)
+      const patch = { pick: selection.name, competition: found.competition, startsAt: found.startsAt }
+      // Keep our already-canonicalized market label (matches the pill chip text). Only
+      // fall back to a live price when this leg's odds didn't come from a screenshot —
+      // screenshot odds are authoritative and must not be silently replaced.
+      if (!current.oddsFromSlip && isValidFractionalOdds(liveOdds)) patch.odds = liveOdds
+      draftLegs.value = draftLegs.value.map((item, i) => (i === index ? { ...item, ...patch } : item))
     }
   } catch {
     // Best-effort — the OCR'd market/pick/odds still work without a live match.
   }
 }
 
+// A Bet Builder slip shows one match once, with every leg just a market+pick against it
+// and no per-leg odds — link the shared match once and apply it to every leg.
+async function resolveBuilderMatchTracking(match) {
+  if (!match.home || !match.away) return
+  try {
+    const response = await $fetch('/api/football/fixtures', {
+      query: { q: canonicalTeamName(match.home) }
+    })
+    const fixtures = response.fixtures || []
+    const matchStart = match.startsAt ? new Date(match.startsAt).getTime() : NaN
+    const found = fixtures.find((fixture) => {
+      const withinWindow =
+        Number.isNaN(matchStart) ||
+        !fixture.startsAt ||
+        Math.abs(new Date(fixture.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
+      return (
+        withinWindow && teamNamesMatch(fixture.home, match.home) && teamNamesMatch(fixture.away, match.away)
+      )
+    })
+    liveStatus.value = { 0: found ? 'linked' : 'not-found' }
+    if (found) {
+      draftLegs.value = draftLegs.value.map((leg) => ({
+        ...leg,
+        matchId: found.id,
+        provider: found.provider
+      }))
+    }
+  } catch {
+    liveStatus.value = { 0: 'not-found' }
+  }
+}
+
 function applyParsedSlip(result) {
   if (result.stake) draftStake.value = result.stake
+  if (draftBetType.value === 'BetBuilder') {
+    draftCombinedOdds.value = result.combinedOdds || draftCombinedOdds.value
+    draftLegs.value = result.legs.map((leg) => ({
+      match: result.match,
+      matchId: '',
+      provider: '',
+      home: result.home,
+      away: result.away,
+      startsAt: result.startsAt || '',
+      market: leg.market,
+      pick: leg.pick,
+      odds: '',
+      status: 'pending'
+    }))
+    openLeg.value = -1
+    entryMode.value = 'manual'
+    liveStatus.value = {}
+    resolveBuilderMatchTracking({ home: result.home, away: result.away, startsAt: result.startsAt })
+    return
+  }
   draftLegs.value = result.legs.map((leg) => ({
     match: leg.match,
     market: leg.market,
     pick: leg.pick,
     odds: leg.odds,
+    oddsFromSlip: true,
     status: 'pending'
   }))
   openLeg.value = -1
@@ -161,7 +227,10 @@ function applyParsedSlip(result) {
 }
 
 const combinedOdds = computed(() =>
-  draftLegs.value.reduce((total, leg) => total * (fractionalToDecimal(leg.odds) || 1), 1)
+  resolveCombinedOdds(
+    { type: draftBetType.value, combinedOdds: fractionalToDecimal(draftCombinedOdds.value) },
+    draftLegs.value
+  )
 )
 const potentialReturn = computed(() => Number(draftStake.value || 0) * combinedOdds.value)
 
@@ -180,7 +249,7 @@ function updateLeg(index, value) {
 }
 
 function addLeg() {
-  draftLegs.value = [...draftLegs.value, blankLeg()]
+  draftLegs.value = [...draftLegs.value, nextLeg()]
   openLeg.value = draftLegs.value.length - 1
 }
 
@@ -194,13 +263,36 @@ function toggleLeg(index) {
   openLeg.value = openLeg.value === index ? -1 : index
 }
 
+function setBetType(type) {
+  if (draftBetType.value === type) return
+  draftBetType.value = type
+  draftLegs.value = [blankLeg()]
+  draftCombinedOdds.value = '10/1'
+  liveStatus.value = {}
+  builderMarkets.value = null
+  openLeg.value = 0
+}
+
 async function save(andStartAnother = false) {
   error.value = ''
   if (!draftStake.value || Number(draftStake.value) < 1) {
     error.value = 'Enter a stake of at least €1.'
     return
   }
-  if (
+  if (draftBetType.value === 'BetBuilder') {
+    if (!draftLegs.value[0]?.match?.trim()) {
+      error.value = 'Choose the match this bet builder is for.'
+      return
+    }
+    if (draftLegs.value.some((leg) => !leg.market.trim() || !leg.pick.trim())) {
+      error.value = 'Complete every leg with a market and a pick.'
+      return
+    }
+    if (!isValidFractionalOdds(draftCombinedOdds.value)) {
+      error.value = 'Enter valid combined odds for this bet builder, such as 11/1.'
+      return
+    }
+  } else if (
     draftLegs.value.some(
       (leg) => !leg.match.trim() || !leg.pick.trim() || !isValidFractionalOdds(leg.odds)
     )
@@ -212,7 +304,13 @@ async function save(andStartAnother = false) {
   saving.value = true
   const saved = await dashboard.saveBet({
     stake: Number(draftStake.value),
-    legs: draftLegs.value.map((leg) => ({ ...leg, odds: fractionalToDecimal(leg.odds) }))
+    betType: draftBetType.value,
+    combinedOdds:
+      draftBetType.value === 'BetBuilder' ? fractionalToDecimal(draftCombinedOdds.value) : undefined,
+    legs: draftLegs.value.map((leg) => ({
+      ...leg,
+      odds: draftBetType.value === 'BetBuilder' ? 1 : fractionalToDecimal(leg.odds)
+    }))
   })
   saving.value = false
   if (!saved) return
@@ -281,6 +379,35 @@ async function save(andStartAnother = false) {
     </div>
 
     <div class="mini-heading">
+      <h3>Bet type</h3>
+    </div>
+    <div class="entry-mode-toggle">
+      <button
+        type="button"
+        class="text-button"
+        :class="{ active: draftBetType === 'Accumulator' }"
+        @click="setBetType('Accumulator')"
+      >
+        Accumulator
+      </button>
+      <button
+        type="button"
+        class="text-button"
+        :class="{ active: draftBetType === 'BetBuilder' }"
+        @click="setBetType('BetBuilder')"
+      >
+        Bet builder
+      </button>
+    </div>
+    <p class="builder-hint">
+      {{
+        draftBetType === 'BetBuilder'
+          ? 'One match, multiple markets — e.g. Man Utd to win and Bruno Fernandes to be booked.'
+          : 'Multiple matches, one pick each.'
+      }}
+    </p>
+
+    <div class="mini-heading">
       <h3>Legs</h3>
       <span class="mono-meta">TAP TO EDIT</span>
     </div>
@@ -302,7 +429,7 @@ async function save(andStartAnother = false) {
         Enter manually
       </button>
     </div>
-    <BetSlipUpload v-if="entryMode === 'upload'" @parsed="applyParsedSlip" />
+    <BetSlipUpload v-if="entryMode === 'upload'" :bet-type="draftBetType" @parsed="applyParsedSlip" />
     <template v-else>
       <div class="builder-legs">
         <BetBuilderLeg
@@ -312,13 +439,32 @@ async function save(andStartAnother = false) {
           :index="index"
           :open="openLeg === index"
           :can-remove="draftLegs.length > 1"
+          :builder-mode="draftBetType === 'BetBuilder'"
+          :match-locked="draftBetType === 'BetBuilder' && index > 0"
+          :shared-markets="builderMarkets"
           :live-status="liveStatus[index] || ''"
           @toggle="toggleLeg(index)"
           @update="updateLeg(index, $event)"
           @remove="removeLeg(index)"
+          @matched="builderMarkets = $event"
         />
       </div>
-      <button type="button" class="builder-add-leg" @click="addLeg">&#65291; Add another leg</button>
+      <button type="button" class="builder-add-leg" @click="addLeg">
+        &#65291; {{ draftBetType === 'BetBuilder' ? 'Add another market' : 'Add another leg' }}
+      </button>
+    </template>
+
+    <template v-if="draftBetType === 'BetBuilder'">
+      <div class="mini-heading">
+        <h3>Combined odds</h3>
+        <span class="mono-meta">AS SHOWN ON THE SLIP</span>
+      </div>
+      <div class="stake-card">
+        <label class="builder-odds-field">
+          <span class="builder-field-label">FRACTIONAL ODDS</span>
+          <input v-model="draftCombinedOdds" placeholder="11/1" />
+        </label>
+      </div>
     </template>
 
     <p v-if="error" class="builder-error" role="alert">{{ error }}</p>

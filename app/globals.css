@@ -3648,6 +3648,11 @@ select option {
   display: flex;
   gap: 4px;
   margin-top: 14px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 .bet-carousel-pips span {
   flex: 1;
@@ -3661,11 +3666,59 @@ select option {
 .bet-carousel-pips span.lost {
   background: var(--coral);
 }
+.bet-carousel-legs {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.bet-carousel-legs-match {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.bet-carousel-leg {
+  display: grid;
+  gap: 1px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: var(--surface-4);
+  border-left: 2px solid var(--line-3);
+}
+.bet-carousel-leg.won {
+  border-left-color: var(--lime);
+}
+.bet-carousel-leg.lost {
+  border-left-color: var(--coral);
+}
+.bet-carousel-leg-match {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.bet-carousel-leg-detail {
+  font-size: 10.5px;
+  color: var(--ink-2);
+}
+.bet-carousel-leg-odds {
+  font-size: 9.5px;
+  color: var(--muted);
+}
+.bet-carousel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
 .bet-carousel-action {
+  flex: 1;
   width: 100%;
   min-height: 42px;
-  margin-top: 14px;
   font-size: 13.5px;
+}
+.bet-carousel-action.outline {
+  background: none;
+  border: 1px solid var(--line-3);
+  color: var(--ink);
 }
 .bet-carousel-view {
   display: block;
@@ -4366,6 +4419,63 @@ select option {
 .history-leg-status.status-lost {
   color: var(--coral);
   background: none;
+}
+.history-bet-groups {
+  display: grid;
+  gap: 8px;
+}
+.history-bet-group {
+  border: 1px solid var(--surface-3);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.history-bet-summary {
+  width: 100%;
+  border: 0;
+  background: var(--surface-4);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.history-bet-main {
+  flex: 1;
+  min-width: 0;
+}
+.history-bet-main strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.history-bet-main small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.history-bet-status {
+  flex: none;
+  font: 400 9.5px 'DM Mono';
+  letter-spacing: 0.6px;
+  color: var(--amber);
+}
+.history-bet-status.status-won {
+  color: var(--lime);
+}
+.history-bet-status.status-lost {
+  color: var(--coral);
+}
+.history-bet-group .history-leg-row {
+  padding: 10px 12px;
+}
+.history-bet-match {
+  margin: 10px 12px 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink);
 }
 
 /* ══ Manage ══ */

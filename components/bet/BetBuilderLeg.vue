@@ -9,15 +9,21 @@ const props = defineProps({
   index: { type: Number, required: true },
   open: Boolean,
   canRemove: Boolean,
+  builderMode: Boolean,
+  matchLocked: Boolean,
+  sharedMarkets: { type: Array, default: null },
   liveStatus: { type: String, default: '' }
 })
-const emit = defineEmits(['toggle', 'update', 'remove'])
+const emit = defineEmits(['toggle', 'update', 'remove', 'matched'])
 
 const results = ref([])
 const searchError = ref('')
 const searching = ref(false)
 const searchSource = ref('paddypower')
-const legMarkets = ref(null)
+const ownMarkets = ref(null)
+// A match-locked leg (Bet Builder, leg 2+) never searches for itself — it reuses the
+// market list the first leg already fetched for their shared match.
+const legMarkets = computed(() => (props.matchLocked ? props.sharedMarkets : ownMarkets.value))
 const activeCategory = ref('')
 let searchTimer
 
@@ -26,8 +32,9 @@ function patch(fields) {
 }
 
 function updateMatch(value) {
-  legMarkets.value = null
+  ownMarkets.value = null
   activeCategory.value = ''
+  emit('matched', null)
   patch({
     match: value,
     matchId: '',
@@ -36,7 +43,7 @@ function updateMatch(value) {
     away: '',
     market: '',
     pick: '',
-    odds: ''
+    ...(props.leg.oddsFromSlip ? {} : { odds: '' })
   })
 }
 
@@ -104,8 +111,9 @@ function selectResult(item) {
   clearTimeout(searchTimer)
   results.value = []
   if (searchSource.value === 'football') {
-    legMarkets.value = null
+    ownMarkets.value = null
     activeCategory.value = ''
+    emit('matched', null)
     patch({
       match: item.label,
       matchId: item.id,
@@ -116,12 +124,13 @@ function selectResult(item) {
       away: item.away,
       market: '',
       pick: '',
-      odds: ''
+      ...(props.leg.oddsFromSlip ? {} : { odds: '' })
     })
     return
   }
-  legMarkets.value = item.markets || []
-  activeCategory.value = groupMarketsByCategory(legMarkets.value)[0]?.key || ''
+  ownMarkets.value = item.markets || []
+  activeCategory.value = groupMarketsByCategory(ownMarkets.value)[0]?.key || ''
+  emit('matched', ownMarkets.value)
   patch({
     match: item.name,
     matchId: '',
@@ -132,7 +141,7 @@ function selectResult(item) {
     away: item.away,
     market: '',
     pick: '',
-    odds: ''
+    ...(props.leg.oddsFromSlip ? {} : { odds: '' })
   })
   resolveLiveTracking(item)
 }
@@ -170,7 +179,7 @@ const pickOptions = computed(() => {
 
 function pickMarket(value) {
   const fields = { market: value, pick: '' }
-  if (legMarkets.value) fields.odds = ''
+  if (legMarkets.value && !props.leg.oddsFromSlip) fields.odds = ''
   patch(fields)
 }
 
@@ -179,7 +188,9 @@ function pickPick(value) {
     const market = legMarkets.value.find((item) => item.name === props.leg.market)
     const selection = market?.selections.find((item) => item.name === value)
     if (selection) {
-      patch({ pick: value, odds: paddyPowerOddsToFractional(selection.odds) })
+      const nextPatch = { pick: value }
+      if (!props.leg.oddsFromSlip) nextPatch.odds = paddyPowerOddsToFractional(selection.odds)
+      patch(nextPatch)
       return
     }
   }
@@ -206,43 +217,49 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       </span>
       <span v-if="leg.matchId" class="leg-live-badge linked">&#9679; Live tracked</span>
       <span v-else-if="liveStatus === 'not-found'" class="leg-live-badge unlinked">No live match found</span>
-      <span class="builder-leg-odds">{{ leg.odds }}</span>
+      <span v-if="!builderMode" class="builder-leg-odds">{{ leg.odds }}</span>
     </button>
 
     <div v-if="open" class="builder-leg-body">
-      <div class="builder-field-label">FIXTURE</div>
-      <input
-        :value="leg.match"
-        placeholder="Match, e.g. Arsenal v Chelsea"
-        @input="handleMatchInput($event.target.value)"
-      />
-      <p v-if="leg.matchId" class="builder-hint leg-live-hint">&#9679; Linked to live scores</p>
-      <p v-else-if="liveStatus === 'not-found'" class="builder-error">
-        Couldn't auto-link this match to live scores &mdash; search and reselect it below.
-      </p>
-      <p v-if="searching" class="builder-hint">Searching fixtures&hellip;</p>
-      <p v-else-if="searchError" class="builder-error">{{ searchError }}</p>
-      <div v-if="results.length" class="builder-suggestions">
-        <button
-          v-for="item in results"
-          :key="item.id || item.name"
-          type="button"
-          class="builder-suggestion"
-          @click="selectResult(item)"
-        >
-          <span>{{ resultLabel(item) }}</span>
-          <span class="mono-meta"
-            >{{ item.competition }} &middot; {{ fixtureDate(item.startsAt) }}</span
+      <template v-if="matchLocked">
+        <div class="builder-field-label">FIXTURE</div>
+        <p class="builder-hint">{{ leg.match }} &mdash; same match as leg 1</p>
+      </template>
+      <template v-else>
+        <div class="builder-field-label">FIXTURE</div>
+        <input
+          :value="leg.match"
+          placeholder="Match, e.g. Arsenal v Chelsea"
+          @input="handleMatchInput($event.target.value)"
+        />
+        <p v-if="leg.matchId" class="builder-hint leg-live-hint">&#9679; Linked to live scores</p>
+        <p v-else-if="liveStatus === 'not-found'" class="builder-error">
+          Couldn't auto-link this match to live scores &mdash; search and reselect it below.
+        </p>
+        <p v-if="searching" class="builder-hint">Searching fixtures&hellip;</p>
+        <p v-else-if="searchError" class="builder-error">{{ searchError }}</p>
+        <div v-if="results.length" class="builder-suggestions">
+          <button
+            v-for="item in results"
+            :key="item.id || item.name"
+            type="button"
+            class="builder-suggestion"
+            @click="selectResult(item)"
           >
+            <span>{{ resultLabel(item) }}</span>
+            <span class="mono-meta"
+              >{{ item.competition }} &middot; {{ fixtureDate(item.startsAt) }}</span
+            >
+          </button>
+        </div>
+        <button type="button" class="builder-source-toggle" @click="toggleSource">
+          {{
+            searchSource === 'football'
+              ? '← Back to Paddy Power odds'
+              : "Can't find it? Search all fixtures instead"
+          }}
         </button>
-      </div>
-      <button type="button" class="builder-source-toggle" @click="toggleSource">
-        {{
-          searchSource === 'football'
-            ? '← Back to Paddy Power odds'
-            : "Can't find it? Search all fixtures instead"
-        }}
-      </button>
+      </template>
 
       <div class="builder-field-label">MARKET</div>
       <div v-if="marketGroups" class="builder-chip-row builder-category-row">
@@ -293,15 +310,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       </template>
 
       <div class="builder-odds-row">
-        <label class="builder-odds-field">
+        <label v-if="!builderMode" class="builder-odds-field">
           <span class="builder-field-label">FRACTIONAL ODDS</span>
           <input
             :value="leg.odds"
             placeholder="1/2"
-            @input="patch({ odds: $event.target.value })"
+            @input="patch({ odds: $event.target.value, oddsFromSlip: false })"
           />
         </label>
-        <div class="builder-decimal-readout">{{ decimal }}</div>
+        <div v-if="!builderMode" class="builder-decimal-readout">{{ decimal }}</div>
         <button v-if="canRemove" type="button" class="builder-remove" @click="$emit('remove')">
           Remove
         </button>
