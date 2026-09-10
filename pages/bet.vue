@@ -1,7 +1,12 @@
 <script setup>
 import { decimalToFractional, fractionalToDecimal, isValidFractionalOdds, resolveCombinedOdds } from '~/lib/odds'
-import { teamNamesMatch, normalizeTeamName, canonicalTeamName } from '~/lib/teamAliases'
+import { teamNamesMatch, normalizeTeamName } from '~/lib/teamAliases'
 import { paddyPowerOddsToFractional, resolveMarketDatabaseValue } from '~/lib/betting'
+
+// OCR'd/parsed kickoff times can be off by a day or more (e.g. a slip showing a bare
+// weekday name like "Sunday" with no date) — team-pairing already does the real
+// disambiguation, so this window is a generous safety margin, not the primary check.
+const LIVE_MATCH_WINDOW_MS = 4 * 24 * 60 * 60 * 1000
 
 const dashboard = reactive(useDashboard())
 
@@ -21,6 +26,18 @@ const liveStatus = ref({})
 // Bet Builder legs after the first don't search for their own match — they reuse
 // whichever Paddy Power market list the first leg's match search resolved.
 const builderMarkets = ref(null)
+// Accumulator legs are each a different match, so — unlike builderMarkets above —
+// this is keyed per leg index rather than shared across all of them.
+const legMarketsByIndex = ref({})
+
+// Once the user (or a screenshot) has set a real combined-odds figure, stop
+// overwriting it with the auto-suggested product below.
+const combinedOddsTouched = ref(false)
+
+function handleLegMatched(index, markets) {
+  if (draftBetType.value === 'BetBuilder') builderMarkets.value = markets
+  else legMarketsByIndex.value = { ...legMarketsByIndex.value, [index]: markets }
+}
 
 function blankLeg() {
   return { match: '', market: '', pick: '', odds: '', status: 'pending' }
@@ -47,6 +64,9 @@ watch(
       draftBetType.value === 'BetBuilder' && dashboard.bet.combinedOdds
         ? decimalToFractional(dashboard.bet.combinedOdds)
         : '10/1'
+    // An existing saved bet's combined odds is real and shouldn't be silently
+    // recalculated; a brand new bet has nothing worth protecting yet.
+    combinedOddsTouched.value = Boolean(dashboard.legs.length && dashboard.bet.combinedOdds)
     draftLegs.value = dashboard.legs.length
       ? dashboard.legs.map((leg) => ({ ...leg, odds: decimalToFractional(leg.odds) }))
       : [blankLeg()]
@@ -75,25 +95,10 @@ async function resolveLiveTracking(index, leg) {
     return
   }
   try {
-    // The football provider's search is picky about short/abbreviated names (e.g.
-    // "Newcastle" alone matches an unrelated Australian club) — search on the fuller
-    // canonical name from our alias table instead of the raw slip text.
-    const response = await $fetch('/api/football/fixtures', {
-      query: { q: canonicalTeamName(leg.home) }
+    const response = await $fetch('/api/football/match', {
+      query: { home: leg.home, away: leg.away, startsAt: leg.startsAt || '' }
     })
-    const fixtures = response.fixtures || []
-    const matchStart = leg.startsAt ? new Date(leg.startsAt).getTime() : NaN
-    const found = fixtures.find((fixture) => {
-      const withinWindow =
-        Number.isNaN(matchStart) ||
-        !fixture.startsAt ||
-        Math.abs(new Date(fixture.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
-      return (
-        withinWindow &&
-        teamNamesMatch(fixture.home, leg.home) &&
-        teamNamesMatch(fixture.away, leg.away)
-      )
-    })
+    const found = response.fixture
     if (found && draftLegs.value[index]?.match === leg.match) {
       draftLegs.value = draftLegs.value.map((item, i) =>
         i === index ? { ...item, matchId: found.id, provider: found.provider } : item
@@ -121,12 +126,16 @@ async function resolvePaddyPowerMarket(index, leg) {
       const withinWindow =
         Number.isNaN(matchStart) ||
         !item.startsAt ||
-        Math.abs(new Date(item.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
+        Math.abs(new Date(item.startsAt).getTime() - matchStart) < LIVE_MATCH_WINDOW_MS
       return (
         withinWindow && teamNamesMatch(item.home, leg.home) && teamNamesMatch(item.away, leg.away)
       )
     })
     if (!found) return
+    // Give this leg's chip UI the real market/pick options for its match, same as the
+    // Bet Builder path — otherwise the generic preset list doesn't have whatever
+    // novel market got parsed (e.g. a player-prop market) at all.
+    legMarketsByIndex.value = { ...legMarketsByIndex.value, [index]: found.markets || null }
 
     const targetValue = resolveMarketDatabaseValue(leg.market)
     const market = (found.markets || []).find(
@@ -143,10 +152,16 @@ async function resolvePaddyPowerMarket(index, leg) {
     if (draftLegs.value[index]?.match === leg.match) {
       const current = draftLegs.value[index]
       const liveOdds = paddyPowerOddsToFractional(selection.odds)
-      const patch = { pick: selection.name, competition: found.competition, startsAt: found.startsAt }
-      // Keep our already-canonicalized market label (matches the pill chip text). Only
-      // fall back to a live price when this leg's odds didn't come from a screenshot —
-      // screenshot odds are authoritative and must not be silently replaced.
+      // Snap both to Paddy Power's exact strings — the chip UI only shows a market/pick
+      // as selected when it matches one of these verbatim.
+      const patch = {
+        market: market.name,
+        pick: selection.name,
+        competition: found.competition,
+        startsAt: found.startsAt
+      }
+      // Only fall back to a live price when this leg's odds didn't come from a
+      // screenshot — screenshot odds are authoritative and must not be silently replaced.
       if (!current.oddsFromSlip && isValidFractionalOdds(liveOdds)) patch.odds = liveOdds
       draftLegs.value = draftLegs.value.map((item, i) => (i === index ? { ...item, ...patch } : item))
     }
@@ -160,20 +175,10 @@ async function resolvePaddyPowerMarket(index, leg) {
 async function resolveBuilderMatchTracking(match) {
   if (!match.home || !match.away) return
   try {
-    const response = await $fetch('/api/football/fixtures', {
-      query: { q: canonicalTeamName(match.home) }
+    const response = await $fetch('/api/football/match', {
+      query: { home: match.home, away: match.away, startsAt: match.startsAt || '' }
     })
-    const fixtures = response.fixtures || []
-    const matchStart = match.startsAt ? new Date(match.startsAt).getTime() : NaN
-    const found = fixtures.find((fixture) => {
-      const withinWindow =
-        Number.isNaN(matchStart) ||
-        !fixture.startsAt ||
-        Math.abs(new Date(fixture.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
-      return (
-        withinWindow && teamNamesMatch(fixture.home, match.home) && teamNamesMatch(fixture.away, match.away)
-      )
-    })
+    const found = response.fixture
     liveStatus.value = { 0: found ? 'linked' : 'not-found' }
     if (found) {
       draftLegs.value = draftLegs.value.map((leg) => ({
@@ -187,10 +192,51 @@ async function resolveBuilderMatchTracking(match) {
   }
 }
 
+// Finds this Bet Builder's match on Paddy Power so the market/pick chip UI has the
+// real options for this specific game (e.g. "Shown A Card") instead of the generic
+// preset list, which doesn't include novel player-prop markets at all — and snaps
+// each already-parsed leg's market/pick onto the matching real option so the right
+// chips show as selected, not just present.
+async function resolveBuilderMarkets(match) {
+  if (!match.home || !match.away) return
+  try {
+    const response = await $fetch('/api/paddypower/search', { query: { q: match.home } })
+    const matchStart = match.startsAt ? new Date(match.startsAt).getTime() : NaN
+    const found = (response.matches || []).find((item) => {
+      const withinWindow =
+        Number.isNaN(matchStart) ||
+        !item.startsAt ||
+        Math.abs(new Date(item.startsAt).getTime() - matchStart) < LIVE_MATCH_WINDOW_MS
+      return withinWindow && teamNamesMatch(item.home, match.home) && teamNamesMatch(item.away, match.away)
+    })
+    if (!found) return
+    builderMarkets.value = found.markets || null
+
+    draftLegs.value = draftLegs.value.map((leg) => {
+      const targetValue = resolveMarketDatabaseValue(leg.market)
+      const market = (found.markets || []).find(
+        (item) => resolveMarketDatabaseValue(item.name) === targetValue
+      )
+      if (!market) return leg
+      const normalizedPick = normalizeTeamName(leg.pick)
+      const selection = market.selections.find(
+        (item) => normalizeTeamName(item.name) === normalizedPick || teamNamesMatch(item.name, leg.pick)
+      )
+      if (!selection) return leg
+      return { ...leg, market: market.name, pick: selection.name }
+    })
+  } catch {
+    // Best-effort — the parsed market/pick text still works without a live match.
+  }
+}
+
 function applyParsedSlip(result) {
   if (result.stake) draftStake.value = result.stake
   if (draftBetType.value === 'BetBuilder') {
     draftCombinedOdds.value = result.combinedOdds || draftCombinedOdds.value
+    // The screenshot's combined price is real (and legs never carry individual odds
+    // from a screenshot anyway) — protect it from the pick-driven suggestion below.
+    combinedOddsTouched.value = true
     draftLegs.value = result.legs.map((leg) => ({
       match: result.match,
       matchId: '',
@@ -206,7 +252,10 @@ function applyParsedSlip(result) {
     openLeg.value = -1
     entryMode.value = 'manual'
     liveStatus.value = {}
-    resolveBuilderMatchTracking({ home: result.home, away: result.away, startsAt: result.startsAt })
+    builderMarkets.value = null
+    const match = { home: result.home, away: result.away, startsAt: result.startsAt }
+    resolveBuilderMatchTracking(match)
+    resolveBuilderMarkets(match)
     return
   }
   draftLegs.value = result.legs.map((leg) => ({
@@ -220,6 +269,7 @@ function applyParsedSlip(result) {
   openLeg.value = -1
   entryMode.value = 'manual'
   liveStatus.value = {}
+  legMarketsByIndex.value = {}
   result.legs.forEach((leg, index) => {
     resolvePaddyPowerMarket(index, leg)
     resolveLiveTracking(index, leg)
@@ -233,6 +283,30 @@ const combinedOdds = computed(() =>
   )
 )
 const potentialReturn = computed(() => Number(draftStake.value || 0) * combinedOdds.value)
+
+// While manually building a Bet Builder (not from a screenshot, and before the user's
+// typed their own figure), suggest the combined odds as the product of each leg's own
+// live-quoted price as a starting point — the same math the accumulator already uses.
+// A real bookmaker's Bet Builder price accounts for correlation between legs and isn't
+// actually this product, so this is only ever a suggestion the user can freely override,
+// never authoritative the way a screenshot's own combined figure is.
+watch(
+  draftLegs,
+  (legs) => {
+    if (draftBetType.value !== 'BetBuilder' || combinedOddsTouched.value) return
+    // Draft legs store odds as fractional strings (e.g. "1/2"), not decimals, so this
+    // can't reuse resolveCombinedOdds's generic formula directly — same math, decimal
+    // conversion first.
+    const suggested = legs.reduce((total, leg) => total * (fractionalToDecimal(leg.odds) || 1), 1)
+    draftCombinedOdds.value = decimalToFractional(suggested)
+  },
+  { deep: true }
+)
+
+function editCombinedOdds(value) {
+  draftCombinedOdds.value = value
+  combinedOddsTouched.value = true
+}
 
 const stakeChips = [10, 20, 50]
 
@@ -256,6 +330,9 @@ function addLeg() {
 function removeLeg(index) {
   draftLegs.value = draftLegs.value.filter((_, i) => i !== index)
   liveStatus.value = {}
+  // Indices shift after a removal, so a per-index map would otherwise point each
+  // remaining leg at the wrong stored market list.
+  legMarketsByIndex.value = {}
   openLeg.value = -1
 }
 
@@ -268,8 +345,10 @@ function setBetType(type) {
   draftBetType.value = type
   draftLegs.value = [blankLeg()]
   draftCombinedOdds.value = '10/1'
+  combinedOddsTouched.value = false
   liveStatus.value = {}
   builderMarkets.value = null
+  legMarketsByIndex.value = {}
   openLeg.value = 0
 }
 
@@ -316,6 +395,14 @@ async function save(andStartAnother = false) {
   if (!saved) return
   if (andStartAnother) dashboard.startNewBet()
   else navigateTo('/')
+}
+
+async function deleteCurrentBet() {
+  if (!confirm('Delete this bet? This cannot be undone.')) return
+  saving.value = true
+  const deleted = await dashboard.deleteBet()
+  saving.value = false
+  if (deleted) navigateTo('/')
 }
 </script>
 
@@ -441,12 +528,12 @@ async function save(andStartAnother = false) {
           :can-remove="draftLegs.length > 1"
           :builder-mode="draftBetType === 'BetBuilder'"
           :match-locked="draftBetType === 'BetBuilder' && index > 0"
-          :shared-markets="builderMarkets"
+          :shared-markets="draftBetType === 'BetBuilder' ? builderMarkets : legMarketsByIndex[index]"
           :live-status="liveStatus[index] || ''"
           @toggle="toggleLeg(index)"
           @update="updateLeg(index, $event)"
           @remove="removeLeg(index)"
-          @matched="builderMarkets = $event"
+          @matched="handleLegMatched(index, $event)"
         />
       </div>
       <button type="button" class="builder-add-leg" @click="addLeg">
@@ -462,7 +549,11 @@ async function save(andStartAnother = false) {
       <div class="stake-card">
         <label class="builder-odds-field">
           <span class="builder-field-label">FRACTIONAL ODDS</span>
-          <input v-model="draftCombinedOdds" placeholder="11/1" />
+          <input
+            :value="draftCombinedOdds"
+            placeholder="11/1"
+            @input="editCombinedOdds($event.target.value)"
+          />
         </label>
       </div>
     </template>
@@ -494,6 +585,16 @@ async function save(andStartAnother = false) {
         @click="save(true)"
       >
         Save and start another bet
+      </button>
+      <button
+        v-if="dashboard.activeBetId"
+        class="builder-remove"
+        style="width: 100%; margin-top: 10px"
+        type="button"
+        :disabled="saving"
+        @click="deleteCurrentBet"
+      >
+        Delete bet
       </button>
     </div>
   </div>

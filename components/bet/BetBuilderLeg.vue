@@ -1,7 +1,6 @@
 <script setup>
 import { fractionalToDecimal } from '~/lib/odds'
 import { BET_MARKETS, getMarketPickOptions, paddyPowerOddsToFractional } from '~/lib/betting'
-import { teamNamesMatch, canonicalTeamName } from '~/lib/teamAliases'
 import { groupMarketsByCategory } from '~/lib/marketCategories'
 
 const props = defineProps({
@@ -21,11 +20,31 @@ const searchError = ref('')
 const searching = ref(false)
 const searchSource = ref('paddypower')
 const ownMarkets = ref(null)
-// A match-locked leg (Bet Builder, leg 2+) never searches for itself — it reuses the
-// market list the first leg already fetched for their shared match.
-const legMarkets = computed(() => (props.matchLocked ? props.sharedMarkets : ownMarkets.value))
+// A match-locked leg (Bet Builder, leg 2+) never searches for itself, so it always
+// needs the shared list. Leg 0 prefers its own search result if it has one, but falls
+// back to the shared list too — e.g. after a screenshot upload resolves the match at
+// the page level rather than through this component's own search.
+const legMarkets = computed(() => ownMarkets.value || props.sharedMarkets)
 const activeCategory = ref('')
 let searchTimer
+
+// Whenever the market list arrives (from a manual search, a screenshot resolving the
+// shared match, or leg 2+ inheriting leg 0's list), jump to whichever category tab
+// actually contains this leg's current market — not just the first tab — so an
+// already-parsed market like "To Be Shown A Card" is visible and shows as selected
+// instead of silently sitting in a category tab that was never opened.
+watch(
+  legMarkets,
+  (markets) => {
+    if (!markets) return
+    const groups = groupMarketsByCategory(markets)
+    const matchingGroup = groups.find((group) =>
+      group.markets.some((market) => market.name === props.leg.market)
+    )
+    activeCategory.value = matchingGroup?.key || groups[0]?.key || ''
+  },
+  { immediate: true }
+)
 
 function patch(fields) {
   emit('update', { ...props.leg, ...fields })
@@ -83,22 +102,10 @@ function toggleSource() {
 
 async function resolveLiveTracking(match) {
   try {
-    const response = await $fetch('/api/football/fixtures', {
-      query: { q: canonicalTeamName(match.home) }
+    const response = await $fetch('/api/football/match', {
+      query: { home: match.home, away: match.away, startsAt: match.startsAt || '' }
     })
-    const fixtures = response.fixtures || []
-    const matchStart = match.startsAt ? new Date(match.startsAt).getTime() : NaN
-    const found = fixtures.find((fixture) => {
-      const withinWindow =
-        Number.isNaN(matchStart) ||
-        !fixture.startsAt ||
-        Math.abs(new Date(fixture.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
-      return (
-        withinWindow &&
-        teamNamesMatch(fixture.home, match.home) &&
-        teamNamesMatch(fixture.away, match.away)
-      )
-    })
+    const found = response.fixture
     if (found && props.leg.match === match.name) {
       patch({ matchId: found.id, provider: found.provider })
     }
@@ -129,7 +136,6 @@ function selectResult(item) {
     return
   }
   ownMarkets.value = item.markets || []
-  activeCategory.value = groupMarketsByCategory(ownMarkets.value)[0]?.key || ''
   emit('matched', ownMarkets.value)
   patch({
     match: item.name,

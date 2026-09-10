@@ -27,7 +27,7 @@ async function databaseMatchIds(client, ids) {
   const { data, error } = await client
     .from('matches')
     .select('provider_match_id')
-    .eq('provider', 'thesportsdb')
+    .eq('provider', 'espn')
   if (error) throw error
   return (data || []).map((match) => match.provider_match_id).filter(Boolean)
 }
@@ -60,21 +60,77 @@ async function settleFinishedSelections(client, fixtures) {
   const { data: pendingSelections, error: selectionError } = await client
     .from('bet_selections')
     .select(
-      'id, bet_id, market, pick, status, matches(provider_match_id, home_team, away_team, home_score, away_score, status)'
+      'id, bet_id, market, pick, status, matches(provider_match_id, home_team, away_team, home_score, away_score, status, events)'
     )
     .eq('status', 'pending')
   if (selectionError) throw selectionError
+
+  // Bet Builder player-prop legs (goalscorer, card, saves, ...) need the full
+  // play-by-play breakdown, not just the final score — fetched lazily, only for
+  // matches where the plain score-based rules below couldn't resolve a selection, and
+  // cached per match id so several legs sharing one match only pay for it once.
+  const eventsCache = new Map()
+  async function eventsFor(matchId) {
+    if (eventsCache.has(matchId)) return eventsCache.get(matchId)
+    const matchEvents = await getFootballProvider()
+      .getMatchEvents(matchId)
+      .catch(() => null)
+    if (matchEvents) {
+      await client
+        .from('matches')
+        .update({ events: matchEvents })
+        .eq('provider', 'espn')
+        .eq('provider_match_id', matchId)
+    }
+    eventsCache.set(matchId, matchEvents)
+    return matchEvents
+  }
+
+  // Per-player counting stats (fouls, shots) need the full paginated play-by-play,
+  // which the cheaper tiers above don't touch — reserved for whatever's still
+  // unresolved after those, and merged into (and persisted alongside) the same cached
+  // events object rather than a separate fetch/column.
+  const playerStatsCache = new Map()
+  async function withPlayerStats(matchId, baseEvents) {
+    if (playerStatsCache.has(matchId)) return playerStatsCache.get(matchId)
+    const playerStats = await getFootballProvider()
+      .getPlayerMatchStats(matchId)
+      .catch(() => null)
+    const merged = playerStats ? { ...baseEvents, ...playerStats } : baseEvents
+    if (playerStats) {
+      await client.from('matches').update({ events: merged }).eq('provider', 'espn').eq('provider_match_id', matchId)
+    }
+    eventsCache.set(matchId, merged)
+    playerStatsCache.set(matchId, merged)
+    return merged
+  }
 
   const affectedBetIds = new Set()
   let settledSelections = 0
   for (const selection of pendingSelections || []) {
     const match = selection.matches
     if (!match || !finishedIds.has(String(match.provider_match_id))) continue
-    const outcome = evaluateSelection({
-      market: selection.market,
-      pick: selection.pick,
-      match
-    })
+    let outcome = evaluateSelection({ market: selection.market, pick: selection.pick, match })
+    if (outcome === null) {
+      const matchEvents = match.events || (await eventsFor(match.provider_match_id))
+      if (matchEvents) {
+        outcome = evaluateSelection({
+          market: selection.market,
+          pick: selection.pick,
+          match,
+          events: matchEvents
+        })
+        if (outcome === null) {
+          const enrichedEvents = await withPlayerStats(match.provider_match_id, matchEvents)
+          outcome = evaluateSelection({
+            market: selection.market,
+            pick: selection.pick,
+            match,
+            events: enrichedEvents
+          })
+        }
+      }
+    }
     if (outcome === null) continue
     const { data: updatedSelection, error } = await client
       .from('bet_selections')
@@ -151,7 +207,7 @@ export default defineEventHandler(async (event) => {
   if (client) {
     const { data, error } = await client
       .from('match_sync_runs')
-      .insert({ provider: 'thesportsdb', status: 'started' })
+      .insert({ provider: 'espn', status: 'started' })
       .select('id')
       .single()
     if (error) throw createError({ statusCode: 500, statusMessage: error.message })
@@ -172,7 +228,7 @@ export default defineEventHandler(async (event) => {
     }
     return {
       ok: true,
-      provider: 'thesportsdb',
+      provider: 'espn',
       matches,
       settlement,
       syncedAt: new Date().toISOString()

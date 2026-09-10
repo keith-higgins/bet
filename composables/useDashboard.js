@@ -9,6 +9,7 @@ export function useDashboard() {
     loadAssignableUsers,
     saveBetToDatabase,
     settleBetInDatabase,
+    deleteBetFromDatabase,
     createInitialWeek,
     createWeek,
     deleteWeek
@@ -386,6 +387,23 @@ export function useDashboard() {
     return true
   }
 
+  async function deleteBet() {
+    const betId = bet.value.id
+    if (!betId) return false
+    const deleted = databaseEnabled.value ? await deleteBetFromDatabase(betId) : true
+    if (!deleted) {
+      notify(`Could not delete: ${lastError.value}`)
+      return false
+    }
+    round.value = {
+      ...round.value,
+      bets: round.value.bets.filter((item) => item.id !== betId)
+    }
+    resetBet(round.value)
+    notify('Bet deleted.')
+    return true
+  }
+
   async function addNewWeek(details) {
     loading.value = true
     if (!round.value.id) {
@@ -462,6 +480,7 @@ export function useDashboard() {
     loadDashboard,
     saveBet,
     settleBet,
+    deleteBet,
     selectBet,
     startNewBet,
     addNewWeek,

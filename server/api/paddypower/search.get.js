@@ -11,8 +11,15 @@ export default defineEventHandler(async (event) => {
   const rows = await readAllCachedPaddyPowerOdds()
   const cutoff = Date.now() - 3 * 60 * 60 * 1000
 
-  const matches = rows
-    .flatMap((row) => (row.matches || []).map((match) => ({ ...match, competition: match.competition || row.competition })))
+  const allMatches = rows.flatMap((row) =>
+    (row.matches || []).map((match) => ({ ...match, competition: match.competition || row.competition }))
+  )
+  // The same fixture can be stored in more than one cached scrape row (e.g. it's
+  // listed under more than one competition page, or two scrape runs overlapped) —
+  // dedupe by Paddy Power's own event id, which is stable per real match.
+  const uniqueMatches = [...new Map(allMatches.map((match) => [match.id, match])).values()]
+
+  const matches = uniqueMatches
     .filter((match) => {
       const startsAt = match.startsAt ? new Date(match.startsAt).getTime() : NaN
       return Number.isNaN(startsAt) || startsAt >= cutoff

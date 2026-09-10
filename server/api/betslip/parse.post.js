@@ -64,9 +64,21 @@ const RESPONSE_SCHEMA = {
   required: ['legs']
 }
 
-function buildPrompt() {
+// Bookmaker slips show kickoff dates three different ways — a full date, "Today"/
+// "Tomorrow", or a bare weekday name ("Sunday") with no date at all — and the model
+// needs an explicit rule for the last case or it can pick the wrong week entirely,
+// which then fails live-match matching even when the teams are identified correctly.
+function dateResolutionInstruction() {
   const today = new Date().toISOString().slice(0, 10)
-  return `You are reading a screenshot of a football accumulator bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet). Today's date is ${today} — resolve any relative dates on the slip ("Today", "Tomorrow") against that.
+  const todayWeekday = new Date(`${today}T00:00:00Z`).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    timeZone: 'UTC'
+  })
+  return `Today's date is ${today} (a ${todayWeekday}) — resolve any relative dates on the slip against that. "Today" means ${today}; "Tomorrow" means the day after. If a kickoff line shows ONLY a bare weekday name with no date (e.g. "Sunday", "Mon"), that always means the NEXT occurrence of that weekday on or after today (never a past one, and never today itself unless the weekday name literally matches today's, i.e. ${todayWeekday}) — count forward from today to find it.`
+}
+
+function buildPrompt() {
+  return `You are reading a screenshot of a football accumulator bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet). ${dateResolutionInstruction()}
 
 This is a multi-selection accumulator. Before answering, scan the ENTIRE image from top to bottom and count how many separate selections are listed — accumulators commonly have 2 to 10+ legs, each in its own row or card, each with its own match and odds. Do not stop after the first selection. If the slip header states a fold count (e.g. "5 Fold Acca", "6 Selections"), your legs array MUST contain exactly that many entries — treat a mismatch as a sign you missed one and re-scan.
 
@@ -140,8 +152,7 @@ const BUILDER_RESPONSE_SCHEMA = {
 }
 
 function buildBuilderPrompt() {
-  const today = new Date().toISOString().slice(0, 10)
-  return `You are reading a screenshot of a football "Bet Builder" (also called "Same Game Multi") bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet). Today's date is ${today} — resolve any relative dates ("Today", "Tomorrow") against that.
+  return `You are reading a screenshot of a football "Bet Builder" (also called "Same Game Multi") bet slip from a bookmaker app (e.g. Paddy Power, Bet365, Sky Bet). ${dateResolutionInstruction()}
 
 A Bet Builder is different from a normal accumulator: it is ALL ONE MATCH with several markets combined into a single price. The layout is:
 1. A header naming the bet type and leg count, e.g. "Bet Builder (4 legs)", next to ONE combined odds figure for the whole bet, e.g. "11.75/1".

@@ -10,6 +10,30 @@ function pickFile() {
   fileInput.value?.click()
 }
 
+// Full-resolution phone screenshots can land close to hosting platforms' request-body
+// limits (e.g. Vercel serverless functions cap around 4.5MB) — a big screenshot can get
+// silently mangled in transit and arrive at the API with no usable file data. Shrink
+// anything oversized client-side first; the OCR doesn't need retina resolution to work.
+async function compressForUpload(file, maxDimension = 1600, quality = 0.85) {
+  if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') return file
+  if (file.size < 1.5 * 1024 * 1024) return file
+  try {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
+    if (!blob || blob.size >= file.size) return file
+    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })
+  } catch {
+    // Best-effort — if compression fails for any reason, fall back to the original file.
+    return file
+  }
+}
+
 async function handleFile(event) {
   const file = event.target.files?.[0]
   event.target.value = ''
@@ -19,8 +43,9 @@ async function handleFile(event) {
   previewUrl.value = URL.createObjectURL(file)
   loading.value = true
   try {
+    const uploadFile = await compressForUpload(file)
     const formData = new FormData()
-    formData.append('image', file)
+    formData.append('image', uploadFile)
     formData.append('betType', props.betType)
     const result = await $fetch('/api/betslip/parse', { method: 'POST', body: formData })
     emit('parsed', result)

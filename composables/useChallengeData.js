@@ -249,9 +249,16 @@ export function useChallengeData() {
           starts_at: leg.startsAt || source?.startsAt || null
         }
       })
+      // A Bet Builder's legs all share the same match, so matchRows can contain several
+      // identical (provider, provider_match_id) rows — Postgres refuses an upsert batch
+      // that affects the same conflict target twice, so collapse to one row per match
+      // before sending it.
+      const uniqueMatchRows = [
+        ...new Map(matchRows.map((row) => [`${row.provider}|${row.provider_match_id}`, row])).values()
+      ]
       const { data: savedMatches, error: matchError } = await client
         .from('matches')
-        .upsert(matchRows, { onConflict: 'provider,provider_match_id' })
+        .upsert(uniqueMatchRows, { onConflict: 'provider,provider_match_id' })
         .select('id, provider_match_id')
       if (matchError) throw matchError
       const matchIds = Object.fromEntries(
@@ -426,6 +433,23 @@ export function useChallengeData() {
     }
   }
 
+  // bet_selections cascades on delete (schema.sql), so removing the bet row is enough.
+  async function deleteBetFromDatabase(betId) {
+    if (!client || !betId) return false
+    loading.value = true
+    try {
+      const { error } = await client.from('bets').delete().eq('id', betId)
+      if (error) throw error
+      return true
+    } catch (error) {
+      lastError.value = error.message
+      console.warn('Could not delete the bet:', error.message)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function updateWeek(weekId, changes) {
     if (!client || !weekId) return false
     const { error } = await client.from('weeks').update(changes).eq('id', weekId)
@@ -445,6 +469,7 @@ export function useChallengeData() {
     loadAssignableUsers,
     saveBetToDatabase,
     settleBetInDatabase,
+    deleteBetFromDatabase,
     createInitialWeek,
     createWeek,
     updateWeek,

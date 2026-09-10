@@ -41,6 +41,9 @@ create table public.matches (
   minute text,
   starts_at timestamptz,
   updated_at timestamptz not null default now(),
+  -- Extracted goal/card/save/foul/corner summary from ESPN's play-by-play, used to
+  -- auto-settle Bet Builder player-prop legs. Null until settled at least once.
+  events jsonb,
   unique (provider, provider_match_id)
 );
 

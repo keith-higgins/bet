@@ -1,6 +1,5 @@
 <script setup>
 import { BET_MARKETS, getMarketPickOptions, paddyPowerOddsToFractional } from '~/lib/betting'
-import { teamNamesMatch, canonicalTeamName } from '~/lib/teamAliases'
 
 const props = defineProps({ legs: { type: Array, default: () => [] } })
 const emit = defineEmits(['update:legs', 'add', 'remove'])
@@ -88,20 +87,10 @@ function toggleSource(index) {
 }
 async function resolveLiveTracking(index, match) {
   try {
-    const response = await $fetch('/api/football/fixtures', {
-      query: { q: canonicalTeamName(match.home) }
+    const response = await $fetch('/api/football/match', {
+      query: { home: match.home, away: match.away, startsAt: match.startsAt || '' }
     })
-    const fixtures = response.fixtures || []
-    const matchStart = match.startsAt ? new Date(match.startsAt).getTime() : NaN
-    const found = fixtures.find((fixture) => {
-      const withinWindow =
-        Number.isNaN(matchStart) ||
-        !fixture.startsAt ||
-        Math.abs(new Date(fixture.startsAt).getTime() - matchStart) < 3 * 60 * 60 * 1000
-      return (
-        withinWindow && teamNamesMatch(fixture.home, match.home) && teamNamesMatch(fixture.away, match.away)
-      )
-    })
+    const found = response.fixture
     if (found && props.legs[index]?.match === match.name) {
       patchLeg(index, { matchId: found.id, provider: found.provider })
     }
