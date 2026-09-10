@@ -71,6 +71,7 @@ const betCards = computed(() =>
 <style scoped>
 .bet-live-group {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   margin-bottom: 16px;
 }
