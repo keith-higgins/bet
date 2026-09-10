@@ -4087,6 +4087,7 @@ select option {
   text-align: right;
 }
 .team-side strong {
+  min-width: 0;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--ink);
