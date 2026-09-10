@@ -1,18 +1,39 @@
 <script setup>
 const dashboard = reactive(useDashboard())
 
-const accaLegs = computed(() =>
-  dashboard.legs.map((leg) => ({
-    ...leg,
-    dotClass: leg.status === 'won' ? 'won' : leg.status === 'lost' ? 'lost' : 'pending'
-  }))
-)
-const landedCount = computed(() => accaLegs.value.filter((leg) => leg.status === 'won').length)
-const toGoCount = computed(
-  () =>
-    accaLegs.value.length -
-    landedCount.value -
-    accaLegs.value.filter((leg) => leg.status === 'lost').length
+// Each of the user's bets gets its own card: one ACCA status bar for the whole
+// bet (it's one bet, however many legs), with the per-leg breakdown living in
+// the match rows nested inside that same card — not a pip per leg up top.
+const betCards = computed(() =>
+  dashboard.userBets
+    .map((currentBet) => {
+      const legs = (currentBet.selections || []).filter((leg) => leg.matchId)
+      if (!legs.length) return null
+
+      const grouped = new Map()
+      legs.forEach((leg) => {
+        const pick = { market: leg.market, pick: leg.pick, status: leg.status }
+        const existing = grouped.get(leg.matchId)
+        if (existing) existing.picks.push(pick)
+        else grouped.set(leg.matchId, { ...leg, picks: [pick] })
+      })
+
+      const landedCount = legs.filter((leg) => leg.status === 'won').length
+      const lostCount = legs.filter((leg) => leg.status === 'lost').length
+      const toGoCount = legs.length - landedCount - lostCount
+      const legPips = legs.map((leg) =>
+        leg.status === 'won' ? 'won' : leg.status === 'lost' ? 'lost' : 'pending'
+      )
+
+      return {
+        id: currentBet.id,
+        landedCount,
+        toGoCount,
+        legPips,
+        matches: [...grouped.values()]
+      }
+    })
+    .filter(Boolean)
 )
 </script>
 
@@ -23,19 +44,22 @@ const toGoCount = computed(
       <h2 class="screen-title">Live scores</h2>
     </div>
 
-    <div v-if="accaLegs.length" class="acca-status-card">
-      <div>
-        <p class="builder-field-label" style="margin-bottom: 7px">ACCA STATUS</p>
-        <strong>{{ landedCount }} landed &middot; {{ toGoCount }} to go</strong>
+    <div v-for="card in betCards" :key="card.id" class="bet-live-group">
+      <div class="acca-status-card">
+        <div>
+          <p class="builder-field-label" style="margin-bottom: 7px">ACCA STATUS</p>
+          <strong>{{ card.landedCount }} landed &middot; {{ card.toGoCount }} to go</strong>
+        </div>
+        <div class="acca-status-pips">
+          <span v-for="(pip, index) in card.legPips" :key="index" :class="pip" />
+        </div>
       </div>
-      <div class="acca-status-pips">
-        <span v-for="(leg, index) in accaLegs" :key="index" :class="leg.dotClass" />
-      </div>
+
+      <LiveScoresCard :matches="card.matches" detailed />
     </div>
 
-    <LiveScoresCard :matches="dashboard.trackedMatches" detailed />
     <div
-      v-if="!dashboard.trackedMatches.length"
+      v-if="!betCards.length"
       class="acca-empty"
       style="border: 1px solid var(--line); border-radius: 18px"
     >
@@ -43,3 +67,11 @@ const toGoCount = computed(
     </div>
   </div>
 </template>
+
+<style scoped>
+.bet-live-group {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+</style>

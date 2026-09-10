@@ -34,7 +34,7 @@ function stateLine(match) {
   return (match.matchStatus || 'SCHEDULED').toUpperCase()
 }
 function scoreLine(match) {
-  if (match.homeScore == null || match.awayScore == null) return '—'
+  if (match.homeScore == null || match.awayScore == null) return isUpcoming(match) ? 'VS' : '—'
   return `${match.homeScore} – ${match.awayScore}`
 }
 function kickoff(match) {
@@ -58,6 +58,18 @@ function pickStatus(match, pick) {
   if (status === 'lost') return { label: 'LOST', tone: 'lost' }
   if (isUpcoming(match)) return { label: 'UPCOMING', tone: 'upcoming' }
   return { label: 'PENDING', tone: 'pending' }
+}
+// Player-prop picks (e.g. "Bruno Fernandes") carry the player's name verbatim as the
+// pick text, so match it straight against that game's squad list rather than trying to
+// parse free text — a non-player pick (match result, BTTS, totals) just finds nothing.
+function playerPhoto(match, pick) {
+  const name = pick?.pick?.trim().toLowerCase()
+  if (!name || !match.roster?.length) return null
+  const player = match.roster.find((item) => {
+    const itemName = item.name.toLowerCase()
+    return itemName === name || name.includes(itemName) || itemName.includes(name)
+  })
+  return player?.photo || null
 }
 
 watch(
@@ -89,17 +101,32 @@ watch(
     >
       <template v-if="detailed">
         <div class="match-detailed-top">
-          <div class="match-preview-main">
-            <strong>{{ match.home }} v {{ match.away }}</strong>
-            <small>{{ stateLine(match) }}</small>
+          <div class="match-scoreline">
+            <div class="team-side home">
+              <img v-if="match.homeLogo" class="team-crest" :src="match.homeLogo" :alt="match.home" />
+              <strong>{{ match.home }}</strong>
+            </div>
+            <span class="match-preview-score">{{ scoreLine(match) }}</span>
+            <div class="team-side away">
+              <strong>{{ match.away }}</strong>
+              <img v-if="match.awayLogo" class="team-crest" :src="match.awayLogo" :alt="match.away" />
+            </div>
           </div>
-          <span class="match-preview-score">{{ scoreLine(match) }}</span>
+          <small class="match-meta">{{ stateLine(match) }}</small>
         </div>
         <div v-for="(pick, index) in match.picks" :key="index" class="match-detailed-foot">
-          <span v-if="pick.pick" class="match-pick"
-            ><template v-if="pick.market">{{ pick.market }} &middot; </template>Pick:
-            {{ pick.pick }}</span
-          >
+          <span v-if="pick.pick" class="match-pick-group">
+            <img
+              v-if="playerPhoto(match, pick)"
+              class="player-photo"
+              :src="playerPhoto(match, pick)"
+              :alt="pick.pick"
+            />
+            <span class="match-pick"
+              ><template v-if="pick.market">{{ pick.market }} &middot; </template>Pick:
+              {{ pick.pick }}</span
+            >
+          </span>
           <span v-else class="match-pick">&nbsp;</span>
           <span class="status-pill" :class="pickStatus(match, pick).tone">{{
             pickStatus(match, pick).label
@@ -108,15 +135,24 @@ watch(
       </template>
       <template v-else>
         <div class="match-preview-main">
-          <strong>{{ match.home }} v {{ match.away }}</strong>
-          <small
+          <div class="match-scoreline">
+            <div class="team-side home">
+              <img v-if="match.homeLogo" class="team-crest small" :src="match.homeLogo" :alt="match.home" />
+              <strong>{{ match.home }}</strong>
+            </div>
+            <span class="match-preview-score">{{ scoreLine(match) }}</span>
+            <div class="team-side away">
+              <strong>{{ match.away }}</strong>
+              <img v-if="match.awayLogo" class="team-crest small" :src="match.awayLogo" :alt="match.away" />
+            </div>
+          </div>
+          <small class="match-meta"
             ><template v-if="match.picks?.length > 1"
               >{{ match.picks.length }} picks &middot; </template
             ><template v-else-if="match.market">{{ match.market }} &middot; </template
             >{{ stateLine(match) }}</small
           >
         </div>
-        <span class="match-preview-score">{{ scoreLine(match) }}</span>
       </template>
     </article>
     <p v-if="error" class="error-copy">{{ error }}</p>
@@ -128,6 +164,30 @@ watch(
 .live-list {
   display: grid;
   gap: 8px;
+}
+.team-crest {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.team-crest.small {
+  width: 22px;
+  height: 22px;
+}
+.match-pick-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.player-photo {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-4);
 }
 .error-copy {
   margin: 6px 0 0;

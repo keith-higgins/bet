@@ -6,9 +6,15 @@ export function useLiveScores() {
 
   async function refresh(matches = []) {
     const eligible = matches.filter((match) => {
-      if (!match.matchId || match.provider !== 'thesportsdb' || !match.startsAt) return false
-      if (scores.value[match.matchId]?.status?.toLowerCase().includes('finished')) return false
-      return new Date(match.startsAt).getTime() <= Date.now()
+      if (!match.matchId || match.provider !== 'espn') return false
+      const existing = scores.value[match.matchId]
+      // Always fetch once, even for a match that hasn't kicked off — that first call is
+      // also how the team crest images get hydrated. After that, only keep polling
+      // matches that are actually underway; a finished or not-yet-started match doesn't
+      // need re-fetching every interval.
+      if (!existing) return true
+      if (existing.status?.toLowerCase().includes('finished')) return false
+      return !match.startsAt || new Date(match.startsAt).getTime() <= Date.now()
     })
     if (!eligible.length) return
     loading.value = true

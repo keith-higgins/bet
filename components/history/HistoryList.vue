@@ -190,12 +190,13 @@ function betStatusLabel(bet) {
                 >
                   <span class="history-leg-index">{{ index + 1 }}</span>
                   <div class="history-leg-main">
-                    <div v-if="bet.type !== 'BetBuilder'">{{ leg.match || 'Unlinked match' }}</div>
-                    <small
-                      >{{ leg.market }} &middot; {{ leg.pick }}<template v-if="bet.type !== 'BetBuilder'">
-                        &middot; {{ scoreLabel(leg) }}</template
-                      ></small
-                    >
+                    <div v-if="bet.type !== 'BetBuilder' && leg.home && leg.away" class="match-scoreline">
+                      <div class="team-side home"><strong>{{ leg.home }}</strong></div>
+                      <span class="match-preview-score">{{ scoreLabel(leg) }}</span>
+                      <div class="team-side away"><strong>{{ leg.away }}</strong></div>
+                    </div>
+                    <div v-else-if="bet.type !== 'BetBuilder'">{{ leg.match || 'Unlinked match' }}</div>
+                    <small>{{ leg.market }} &middot; {{ leg.pick }}</small>
                   </div>
                   <span class="history-leg-status" :class="`status-${leg.status || 'pending'}`">{{
                     (leg.status || 'pending').toUpperCase()
