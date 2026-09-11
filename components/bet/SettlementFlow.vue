@@ -2,9 +2,11 @@
 const props = defineProps({
   open: Boolean,
   legs: { type: Array, default: () => [] },
-  loading: Boolean
+  loading: Boolean,
+  isAdmin: Boolean,
+  rechecking: Boolean
 })
-const emit = defineEmits(['close', 'save'])
+const emit = defineEmits(['close', 'save', 'recheck'])
 const statuses = ref([])
 const error = ref('')
 watch(
@@ -15,6 +17,16 @@ watch(
       error.value = ''
     }
   }
+)
+// A recheck re-derives every leg from a fresh live-score/settlement check server-side
+// and writes the result straight to the DB — refresh the dropdowns to match once the
+// parent's `legs` prop comes back updated, rather than leaving the old picks showing.
+watch(
+  () => props.legs,
+  (value) => {
+    if (props.open) statuses.value = value.map((leg) => ({ ...leg, status: leg.status || 'pending' }))
+  },
+  { deep: true }
 )
 function save() {
   if (statuses.value.every((leg) => leg.status === 'pending')) {
@@ -52,6 +64,16 @@ function save() {
         <p class="flow-intro">
           Mark each selection as it finishes. Pending selections keep the bet open.
         </p>
+        <button
+          v-if="isAdmin"
+          class="text-button"
+          type="button"
+          :disabled="rechecking"
+          @click="$emit('recheck')"
+        >
+          <LoadingSpinner v-if="rechecking" label="Rechecking…" inline small />
+          <template v-else>&#8635; Recheck automatically</template>
+        </button>
         <div class="settlement-cards">
           <label v-for="(leg, index) in statuses" :key="index" class="settlement-card"
             ><span

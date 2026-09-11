@@ -173,7 +173,17 @@ const activeMarketOptions = computed(() => {
 })
 
 function selectCategory(key) {
+  if (key === activeCategory.value) return
   activeCategory.value = key
+  // Switching category tabs alone left the old market (and its pick options, e.g.
+  // player names for "Anytime Goalscorer") selected underneath until a new market
+  // chip was actually clicked — clear it now unless the current market also happens
+  // to live in the category just switched to.
+  const marketNames =
+    marketGroups.value?.find((group) => group.key === key)?.markets.map((market) => market.name) || []
+  if (props.leg.market && !marketNames.includes(props.leg.market)) {
+    pickMarket('')
+  }
 }
 const pickOptions = computed(() => {
   if (legMarkets.value) {

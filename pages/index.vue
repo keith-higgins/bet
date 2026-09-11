@@ -1,6 +1,9 @@
 <script setup>
 const dashboard = reactive(useDashboard())
 const settlementOpen = ref(false)
+// The id of whichever bet is currently being rechecked (from a card or the
+// settlement modal) — empty when none is, so only that one button shows "loading".
+const recheckingId = ref('')
 
 // AppShell only loads the dashboard once, on initial app boot — landing back
 // here after saving a bet (a soft client-side navigation) doesn't re-trigger
@@ -10,6 +13,12 @@ onMounted(dashboard.loadDashboard)
 async function saveSettlement(statuses) {
   const saved = await dashboard.settleBet(statuses)
   if (saved) settlementOpen.value = false
+}
+
+async function recheckBetById(betId) {
+  recheckingId.value = betId
+  await dashboard.recheckBet(betId)
+  recheckingId.value = ''
 }
 
 function goBuildNewBet() {
@@ -63,9 +72,11 @@ function goSettleBet(betId) {
         :current-user-id="dashboard.currentUserId"
         :is-admin="dashboard.isAdmin"
         :is-settled="dashboard.round.status === 'settled'"
+        :rechecking-id="recheckingId"
         :money="dashboard.money"
         @edit="goEditBet"
         @settle="goSettleBet"
+        @recheck="recheckBetById"
         @new-bet="goBuildNewBet"
       />
       <button
@@ -102,8 +113,11 @@ function goSettleBet(betId) {
       :open="settlementOpen"
       :legs="dashboard.legs"
       :loading="dashboard.loading"
+      :is-admin="dashboard.isAdmin"
+      :rechecking="recheckingId === dashboard.activeBetId"
       @close="settlementOpen = false"
       @save="saveSettlement"
+      @recheck="recheckBetById(dashboard.activeBetId)"
     />
     <ToastMessage :message="dashboard.toast" />
   </div>

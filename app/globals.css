@@ -3706,12 +3706,13 @@ select option {
 }
 .bet-carousel-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
 }
 .bet-carousel-action {
   flex: 1;
-  width: 100%;
+  min-width: 100px;
   min-height: 42px;
   font-size: 13.5px;
 }

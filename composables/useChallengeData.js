@@ -341,6 +341,30 @@ export function useChallengeData() {
     }
   }
 
+  // Unlike settleBetInDatabase (which writes whatever statuses the admin chose in the
+  // UI), this asks the server to re-derive every leg's result itself from a fresh
+  // live-score/settlement check — the only way to fix a leg that already settled
+  // wrong, since /api/sync only ever touches still-pending selections.
+  async function recheckBetInDatabase(betId) {
+    if (!client || !betId) return null
+    loading.value = true
+    try {
+      const { data: sessionResult } = await client.auth.getSession()
+      const session = sessionResult.session
+      if (!session) throw new Error('You need to sign in first.')
+      return await $fetch(`/api/bets/${betId}/recheck`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      })
+    } catch (error) {
+      lastError.value = error.data?.statusMessage || error.message
+      console.warn('Could not recheck the bet:', lastError.value)
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function createInitialWeek(details = {}) {
     if (!client) return null
     loading.value = true
@@ -469,6 +493,7 @@ export function useChallengeData() {
     loadAssignableUsers,
     saveBetToDatabase,
     settleBetInDatabase,
+    recheckBetInDatabase,
     deleteBetFromDatabase,
     createInitialWeek,
     createWeek,

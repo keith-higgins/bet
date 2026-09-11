@@ -9,6 +9,7 @@ export function useDashboard() {
     loadAssignableUsers,
     saveBetToDatabase,
     settleBetInDatabase,
+    recheckBetInDatabase,
     deleteBetFromDatabase,
     createInitialWeek,
     createWeek,
@@ -387,6 +388,50 @@ export function useDashboard() {
     return true
   }
 
+  // Defaults to the currently loaded bet (used by the settlement modal), but also
+  // takes an explicit id so a bet card elsewhere in the round can trigger its own
+  // recheck without first having to be loaded as the active bet.
+  async function recheckBet(betId = bet.value.id) {
+    if (!betId) return false
+    const result = await recheckBetInDatabase(betId)
+    if (!result) {
+      notify(`Could not recheck: ${lastError.value}`)
+      return false
+    }
+    const statusById = new Map(result.legs.map((leg) => [leg.id, leg.status]))
+    const patchSelections = (selections) =>
+      selections.map((item) => ({ ...item, status: statusById.get(item.id) ?? item.status }))
+
+    round.value = {
+      ...round.value,
+      bets: round.value.bets.map((item) =>
+        item.id === betId
+          ? {
+              ...item,
+              status: result.bet?.status || item.status,
+              actualReturn: result.bet ? result.bet.actualReturn : item.actualReturn,
+              selections: patchSelections(item.selections)
+            }
+          : item
+      )
+    }
+    if (bet.value.id === betId) {
+      bet.value = {
+        ...bet.value,
+        status: result.bet?.status || bet.value.status,
+        actualReturn: result.bet ? result.bet.actualReturn : bet.value.actualReturn,
+        selections: patchSelections(bet.value.selections)
+      }
+      legs.value = patchSelections(legs.value)
+    }
+    notify(
+      result.changed.length
+        ? `Recheck updated ${result.changed.length} selection${result.changed.length === 1 ? '' : 's'}.`
+        : 'Recheck found no change.'
+    )
+    return true
+  }
+
   async function deleteBet() {
     const betId = bet.value.id
     if (!betId) return false
@@ -480,6 +525,7 @@ export function useDashboard() {
     loadDashboard,
     saveBet,
     settleBet,
+    recheckBet,
     deleteBet,
     selectBet,
     startNewBet,

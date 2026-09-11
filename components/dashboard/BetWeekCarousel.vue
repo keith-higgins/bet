@@ -6,9 +6,10 @@ const props = defineProps({
   currentUserId: { type: String, default: '' },
   isAdmin: Boolean,
   isSettled: Boolean,
+  recheckingId: { type: String, default: '' },
   money: { type: Function, required: true }
 })
-const emit = defineEmits(['edit', 'settle', 'new-bet'])
+const emit = defineEmits(['edit', 'settle', 'recheck', 'new-bet'])
 
 const expanded = ref({})
 function toggleExpanded(id) {
@@ -137,6 +138,15 @@ const stillRiding = computed(() =>
             @click="emit('settle', card.id)"
           >
             Settle
+          </button>
+          <button
+            v-if="isAdmin && card.legCount"
+            type="button"
+            class="hero-button bet-carousel-action outline"
+            :disabled="recheckingId === card.id"
+            @click="emit('recheck', card.id)"
+          >
+            {{ recheckingId === card.id ? 'Rechecking…' : '↻ Recheck' }}
           </button>
         </div>
         <span v-else class="bet-carousel-view">View only</span>
