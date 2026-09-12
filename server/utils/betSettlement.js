@@ -55,16 +55,17 @@ export function createEventCaches(client) {
 // needed by a manual recheck, since the cached blob may predate a settlement logic
 // change (e.g. a new field it now reads) and would otherwise never get refreshed.
 export async function resolveOutcome(selection, match, caches, { force = false } = {}) {
-  let outcome = evaluateSelection({ market: selection.market, pick: selection.pick, match })
+  const base = { market: selection.market, marketType: selection.market_type, pick: selection.pick, match }
+  let outcome = evaluateSelection(base)
   if (outcome !== null) return outcome
 
   const matchEvents = force || !match.events ? await caches.eventsFor(match.provider_match_id) : match.events
   if (!matchEvents) return null
-  outcome = evaluateSelection({ market: selection.market, pick: selection.pick, match, events: matchEvents })
+  outcome = evaluateSelection({ ...base, events: matchEvents })
   if (outcome !== null) return outcome
 
   const enrichedEvents = await caches.withPlayerStats(match.provider_match_id, matchEvents)
-  return evaluateSelection({ market: selection.market, pick: selection.pick, match, events: enrichedEvents })
+  return evaluateSelection({ ...base, events: enrichedEvents })
 }
 
 // Recomputes one bet's aggregate status/return from its selections' current

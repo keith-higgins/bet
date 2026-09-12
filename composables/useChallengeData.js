@@ -75,6 +75,7 @@ function toUiWeek(row, users = []) {
           ? `${selection.matches.home_team} v ${selection.matches.away_team}`
           : '',
         market: toUiMarket(selection.market),
+        marketType: selection.market_type || '',
         pick: selection.pick,
         odds: Number(selection.odds),
         status: selection.status
@@ -276,6 +277,7 @@ export function useChallengeData() {
             bet_id: savedBet.id,
             match_id: matchIds[leg.matchId || matches[index]?.id || manualId],
             market: toDatabaseMarket(leg.market),
+            market_type: leg.marketType || null,
             pick: leg.pick,
             // Bet Builder legs don't carry individual odds (the bookmaker only prices the
             // whole bet as one figure, stored on the bet itself) — a neutral placeholder

@@ -54,7 +54,11 @@ function rowClass(match) {
 }
 function pickStatus(match, pick) {
   const status = pick ? pick.status : match.betStatus
-  if (status === 'won') return { label: 'ON TRACK', tone: 'won' }
+  // A leg only ever moves off 'pending' once settlement has actually run, which only
+  // happens after the match is finished — so 'won' here is always a confirmed final
+  // result, never a live/in-progress "still looking good" state. "ON TRACK" implied
+  // the opposite and was misleading once a bet had genuinely already won.
+  if (status === 'won') return { label: 'WON', tone: 'won' }
   if (status === 'lost') return { label: 'LOST', tone: 'lost' }
   if (isUpcoming(match)) return { label: 'UPCOMING', tone: 'upcoming' }
   return { label: 'PENDING', tone: 'pending' }

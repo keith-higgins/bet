@@ -129,6 +129,10 @@ create table public.bet_selections (
       'correct_score'
     )
   ),
+  -- Paddy Power's own stable machine id for the market (e.g. TO_SCORE), when the pick
+  -- came from a real Paddy Power market — null for manual entries. See migration
+  -- 20260912000000_add_bet_selection_market_type.sql.
+  market_type text,
   pick text not null,
   odds numeric(8,2) not null,
   status text not null default 'pending'

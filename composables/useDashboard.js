@@ -230,6 +230,7 @@ export function useDashboard() {
       home: item.home || '',
       away: item.away || '',
       market: item.market,
+      marketType: item.marketType || '',
       pick: item.pick,
       odds: item.odds,
       status: item.status || 'pending'
@@ -290,8 +291,10 @@ export function useDashboard() {
     const nextBet = {
       ...bet.value,
       type: betType,
-      combinedOdds:
-        betType === 'BetBuilder' ? Number(payload.combinedOdds) || 1 : bet.value.combinedOdds,
+      // 0 (unset) rather than falling back to the previous bet's stale value — a
+      // falsy combinedOdds here tells resolveCombinedOdds (called at the DB layer) to
+      // derive it from the legs' own odds instead, same for either bet type now.
+      combinedOdds: Number(payload.combinedOdds) || 0,
       stake: Number(payload.stake),
       selections: nextLegs.map((leg, index) => ({
         id: bet.value.selections[index]?.id || `leg-${index}`,
@@ -302,6 +305,7 @@ export function useDashboard() {
         away: leg.away || '',
         match: leg.match,
         market: leg.market,
+        marketType: leg.marketType || '',
         pick: leg.pick,
         odds: leg.odds,
         status: 'pending'

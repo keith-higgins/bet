@@ -4,7 +4,7 @@ import { requireAdmin, adminClient } from '~/server/utils/auth.js'
 import { createEventCaches, resolveOutcome, recomputeBetStatus } from '~/server/utils/betSettlement.js'
 
 const SELECTION_COLUMNS =
-  'id, bet_id, market, pick, status, matches(provider, provider_match_id, home_team, away_team, home_score, away_score, status, minute, events)'
+  'id, bet_id, market, market_type, pick, status, matches(provider, provider_match_id, home_team, away_team, home_score, away_score, status, minute, events)'
 
 // Unlike /api/sync (which only ever touches still-pending selections, on the
 // assumption its own last run got everything right), this re-evaluates every

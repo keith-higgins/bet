@@ -36,14 +36,16 @@ function updateMatch(index, value) {
     home: '',
     away: '',
     market: '',
+    marketType: '',
     pick: '',
     ...(leg?.oddsFromSlip ? {} : { odds: '' })
   })
 }
 function updateMarket(index, value) {
   const leg = props.legs[index]
-  const patch = { market: value, pick: '' }
-  if (legMarkets.value[index] && !leg?.oddsFromSlip) patch.odds = ''
+  const markets = legMarkets.value[index]
+  const patch = { market: value, marketType: markets?.find((item) => item.name === value)?.marketType || '', pick: '' }
+  if (markets && !leg?.oddsFromSlip) patch.odds = ''
   patchLeg(index, patch)
 }
 function handleMatchInput(index, value) {
@@ -111,6 +113,7 @@ function selectPaddyPowerMatch(index, match) {
     home: match.home,
     away: match.away,
     market: '',
+    marketType: '',
     pick: '',
     ...(leg?.oddsFromSlip ? {} : { odds: '' })
   })
@@ -130,6 +133,7 @@ function selectFootballFixture(index, fixture) {
     home: fixture.home,
     away: fixture.away,
     market: '',
+    marketType: '',
     pick: '',
     ...(leg?.oddsFromSlip ? {} : { odds: '' })
   })

@@ -46,6 +46,7 @@ const RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
     stake: { type: 'number', nullable: true },
+    combinedOdds: { type: 'string', nullable: true },
     legs: {
       type: 'array',
       items: {
@@ -99,7 +100,9 @@ For each selection return:
 - market: the betting market as shown (e.g. "Match result", "Both teams to score", "Total goals", "Correct score")
 - pick: the exact selection text as shown (e.g. a team name, "Draw", "Over 2.5", "Yes")
 - odds: the odds for that selection EXACTLY as displayed on the slip, character for character (e.g. "8/13" or "1.79/1" if shown as a fraction — note the numerator is sometimes a decimal like "1.79", copy it as-is — or "1.62" if shown as a decimal). Do not convert, simplify, or round it yourself — copy the displayed value verbatim.
-Also extract the total stake amount as a number if visible, in "stake" (null if not visible).
+Also extract:
+- combinedOdds: the ONE combined/total odds figure for the whole accumulator, if shown (often near a fold-count header like "5 Fold Acca" or next to the total stake/returns line), copied EXACTLY as displayed, character for character. Null if no single combined figure is visible anywhere on the slip.
+- stake: the total stake amount as a number if visible, in "stake" (null if not visible).
 Only include actual bet selections, ignore navigation chrome, balances, and promo banners.`
 }
 
@@ -258,8 +261,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, statusMessage: "Couldn't find any selections on that slip. Try a clearer screenshot or enter it manually." })
   }
 
+  const combinedOdds = paddyPowerOddsToFractional(parsed.combinedOdds)
   return {
     stake: Number.isFinite(Number(parsed.stake)) ? Number(parsed.stake) : null,
+    combinedOdds: isValidFractionalOdds(combinedOdds) ? combinedOdds : '',
     legs
   }
 })

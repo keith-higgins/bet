@@ -60,10 +60,9 @@ watch(
   () => {
     draftStake.value = dashboard.stake || 20
     draftBetType.value = dashboard.bet.type || 'Accumulator'
-    draftCombinedOdds.value =
-      draftBetType.value === 'BetBuilder' && dashboard.bet.combinedOdds
-        ? decimalToFractional(dashboard.bet.combinedOdds)
-        : '10/1'
+    draftCombinedOdds.value = dashboard.bet.combinedOdds
+      ? decimalToFractional(dashboard.bet.combinedOdds)
+      : '10/1'
     // An existing saved bet's combined odds is real and shouldn't be silently
     // recalculated; a brand new bet has nothing worth protecting yet.
     combinedOddsTouched.value = Boolean(dashboard.legs.length && dashboard.bet.combinedOdds)
@@ -156,6 +155,7 @@ async function resolvePaddyPowerMarket(index, leg) {
       // as selected when it matches one of these verbatim.
       const patch = {
         market: market.name,
+        marketType: market.marketType || '',
         pick: selection.name,
         competition: found.competition,
         startsAt: found.startsAt
@@ -223,7 +223,7 @@ async function resolveBuilderMarkets(match) {
         (item) => normalizeTeamName(item.name) === normalizedPick || teamNamesMatch(item.name, leg.pick)
       )
       if (!selection) return leg
-      return { ...leg, market: market.name, pick: selection.name }
+      return { ...leg, market: market.name, marketType: market.marketType || '', pick: selection.name }
     })
   } catch {
     // Best-effort — the parsed market/pick text still works without a live match.
@@ -258,6 +258,12 @@ function applyParsedSlip(result) {
     resolveBuilderMarkets(match)
     return
   }
+  if (result.combinedOdds) {
+    draftCombinedOdds.value = result.combinedOdds
+    // Same rationale as the Bet Builder branch above — a screenshot's own combined
+    // figure is real and shouldn't be silently overwritten by the per-leg suggestion.
+    combinedOddsTouched.value = true
+  }
   draftLegs.value = result.legs.map((leg) => ({
     match: leg.match,
     market: leg.market,
@@ -279,21 +285,26 @@ function applyParsedSlip(result) {
 const combinedOdds = computed(() =>
   resolveCombinedOdds(
     { type: draftBetType.value, combinedOdds: fractionalToDecimal(draftCombinedOdds.value) },
-    draftLegs.value
+    // Draft legs store odds as fractional strings ("5/4") while being edited —
+    // resolveCombinedOdds multiplies plain numbers, so without this conversion
+    // Number("5/4") is NaN, every leg silently contributes a factor of 1, and the
+    // combined odds shown gets stuck at decimalToFractional(1)'s literal '1/2'
+    // fallback regardless of what the real leg odds are.
+    draftLegs.value.map((leg) => ({ ...leg, odds: fractionalToDecimal(leg.odds) }))
   )
 )
 const potentialReturn = computed(() => Number(draftStake.value || 0) * combinedOdds.value)
 
-// While manually building a Bet Builder (not from a screenshot, and before the user's
-// typed their own figure), suggest the combined odds as the product of each leg's own
-// live-quoted price as a starting point — the same math the accumulator already uses.
-// A real bookmaker's Bet Builder price accounts for correlation between legs and isn't
-// actually this product, so this is only ever a suggestion the user can freely override,
-// never authoritative the way a screenshot's own combined figure is.
+// While manually building a bet (not from a screenshot, and before the user's typed
+// their own figure), suggest the combined odds as the product of each leg's own
+// live-quoted price as a starting point. For an accumulator this product usually is
+// the real answer; for a Bet Builder, a real bookmaker's price accounts for
+// correlation between legs and isn't actually this product — either way it's only
+// ever a suggestion the user (or a screenshot's own combined figure) can override.
 watch(
   draftLegs,
   (legs) => {
-    if (draftBetType.value !== 'BetBuilder' || combinedOddsTouched.value) return
+    if (combinedOddsTouched.value) return
     // Draft legs store odds as fractional strings (e.g. "1/2"), not decimals, so this
     // can't reuse resolveCombinedOdds's generic formula directly — same math, decimal
     // conversion first.
@@ -306,6 +317,17 @@ watch(
 function editCombinedOdds(value) {
   draftCombinedOdds.value = value
   combinedOddsTouched.value = true
+}
+
+// The potential return shown is always stake × combined odds — there's no separate
+// stored figure for it, so editing it directly means back-deriving what combined
+// odds would produce that return at the current stake, then storing that instead.
+// Keeps a single source of truth (odds) rather than letting the two drift apart.
+function editPotentialReturn(value) {
+  const returnAmount = Number(value)
+  const stake = Number(draftStake.value)
+  if (!Number.isFinite(returnAmount) || returnAmount <= 0 || !stake) return
+  editCombinedOdds(decimalToFractional(returnAmount / stake))
 }
 
 const stakeChips = [10, 20, 50]
@@ -384,8 +406,10 @@ async function save(andStartAnother = false) {
   const saved = await dashboard.saveBet({
     stake: Number(draftStake.value),
     betType: draftBetType.value,
-    combinedOdds:
-      draftBetType.value === 'BetBuilder' ? fractionalToDecimal(draftCombinedOdds.value) : undefined,
+    // A Bet Builder's is validated above and always present. An accumulator's is
+    // best-effort — if it's missing or invalid, this comes through null and
+    // resolveCombinedOdds falls back to multiplying the legs' own odds instead.
+    combinedOdds: fractionalToDecimal(draftCombinedOdds.value),
     legs: draftLegs.value.map((leg) => ({
       ...leg,
       odds: draftBetType.value === 'BetBuilder' ? 1 : fractionalToDecimal(leg.odds)
@@ -541,12 +565,12 @@ async function deleteCurrentBet() {
       </button>
     </template>
 
-    <template v-if="draftBetType === 'BetBuilder'">
-      <div class="mini-heading">
-        <h3>Combined odds</h3>
-        <span class="mono-meta">AS SHOWN ON THE SLIP</span>
-      </div>
-      <div class="stake-card">
+    <div class="mini-heading">
+      <h3>Combined odds</h3>
+      <span class="mono-meta">AS SHOWN ON THE SLIP</span>
+    </div>
+    <div class="stake-card">
+      <div class="builder-odds-row" style="margin-top: 0">
         <label class="builder-odds-field">
           <span class="builder-field-label">FRACTIONAL ODDS</span>
           <input
@@ -555,8 +579,18 @@ async function deleteCurrentBet() {
             @input="editCombinedOdds($event.target.value)"
           />
         </label>
+        <label class="builder-odds-field">
+          <span class="builder-field-label">POTENTIAL RETURN</span>
+          <input
+            :value="potentialReturn ? potentialReturn.toFixed(2) : ''"
+            type="text"
+            inputmode="decimal"
+            placeholder="e.g. 108.86"
+            @input="editPotentialReturn($event.target.value)"
+          />
+        </label>
       </div>
-    </template>
+    </div>
 
     <p v-if="error" class="builder-error" role="alert">{{ error }}</p>
 

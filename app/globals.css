@@ -4970,6 +4970,9 @@ select option {
   text-decoration: underline;
   padding: 0;
 }
+.builder-market-search {
+  margin-bottom: 10px;
+}
 .builder-chip-row {
   display: flex;
   flex-wrap: wrap;

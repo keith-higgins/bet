@@ -61,6 +61,7 @@ function updateMatch(value) {
     home: '',
     away: '',
     market: '',
+    marketType: '',
     pick: '',
     ...(props.leg.oddsFromSlip ? {} : { odds: '' })
   })
@@ -146,6 +147,7 @@ function selectResult(item) {
     home: item.home,
     away: item.away,
     market: '',
+    marketType: '',
     pick: '',
     ...(props.leg.oddsFromSlip ? {} : { odds: '' })
   })
@@ -172,6 +174,30 @@ const activeMarketOptions = computed(() => {
   return (group || marketGroups.value[0])?.markets.map((market) => market.name) || []
 })
 
+const marketSearch = ref('')
+// All market names across every category, flattened — search looks across
+// everything rather than just whatever category tab happens to be active, since the
+// whole point is not having to already know which tab a market lives under.
+const allMarketNames = computed(() =>
+  marketGroups.value
+    ? marketGroups.value.flatMap((group) => group.markets.map((market) => market.name))
+    : BET_MARKETS.map((m) => m.label)
+)
+const searchMatches = computed(() => {
+  const query = marketSearch.value.trim().toLowerCase()
+  if (!query) return []
+  return allMarketNames.value.filter((name) => name.toLowerCase().includes(query))
+})
+
+function selectSearchResult(name) {
+  // Jump the category tab to wherever this market actually lives, so it's still
+  // showing the right chip highlighted once the search text is cleared.
+  const group = marketGroups.value?.find((item) => item.markets.some((market) => market.name === name))
+  if (group) activeCategory.value = group.key
+  pickMarket(name)
+  marketSearch.value = ''
+}
+
 function selectCategory(key) {
   if (key === activeCategory.value) return
   activeCategory.value = key
@@ -194,8 +220,11 @@ const pickOptions = computed(() => {
 })
 
 function pickMarket(value) {
-  const fields = { market: value, pick: '' }
-  if (legMarkets.value && !props.leg.oddsFromSlip) fields.odds = ''
+  const fields = { market: value, marketType: '', pick: '' }
+  if (legMarkets.value) {
+    fields.marketType = legMarkets.value.find((item) => item.name === value)?.marketType || ''
+    if (!props.leg.oddsFromSlip) fields.odds = ''
+  }
   patch(fields)
 }
 
@@ -278,30 +307,53 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       </template>
 
       <div class="builder-field-label">MARKET</div>
-      <div v-if="marketGroups" class="builder-chip-row builder-category-row">
-        <button
-          v-for="group in marketGroups"
-          :key="group.key"
-          type="button"
-          class="pill-chip category-chip"
-          :class="{ active: group.key === activeCategory }"
-          @click="selectCategory(group.key)"
-        >
-          {{ group.label }}
-        </button>
-      </div>
-      <div class="builder-chip-row">
-        <button
-          v-for="market in activeMarketOptions"
-          :key="market"
-          type="button"
-          class="pill-chip"
-          :class="{ active: market === leg.market }"
-          @click="pickMarket(market)"
-        >
-          {{ market }}
-        </button>
-      </div>
+      <input
+        class="builder-market-search"
+        :value="marketSearch"
+        placeholder="Search markets, e.g. corners, cards, shots…"
+        @input="marketSearch = $event.target.value"
+      />
+      <template v-if="marketSearch.trim()">
+        <div v-if="searchMatches.length" class="builder-chip-row">
+          <button
+            v-for="market in searchMatches"
+            :key="market"
+            type="button"
+            class="pill-chip"
+            :class="{ active: market === leg.market }"
+            @click="selectSearchResult(market)"
+          >
+            {{ market }}
+          </button>
+        </div>
+        <p v-else class="builder-hint">No markets match &ldquo;{{ marketSearch }}&rdquo;.</p>
+      </template>
+      <template v-else>
+        <div v-if="marketGroups" class="builder-chip-row builder-category-row">
+          <button
+            v-for="group in marketGroups"
+            :key="group.key"
+            type="button"
+            class="pill-chip category-chip"
+            :class="{ active: group.key === activeCategory }"
+            @click="selectCategory(group.key)"
+          >
+            {{ group.label }}
+          </button>
+        </div>
+        <div class="builder-chip-row">
+          <button
+            v-for="market in activeMarketOptions"
+            :key="market"
+            type="button"
+            class="pill-chip"
+            :class="{ active: market === leg.market }"
+            @click="pickMarket(market)"
+          >
+            {{ market }}
+          </button>
+        </div>
+      </template>
 
       <template v-if="leg.market">
         <div class="builder-field-label">PICK</div>

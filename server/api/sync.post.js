@@ -61,7 +61,7 @@ async function settleFinishedSelections(client, fixtures) {
   const { data: pendingSelections, error: selectionError } = await client
     .from('bet_selections')
     .select(
-      'id, bet_id, market, pick, status, matches(provider_match_id, home_team, away_team, home_score, away_score, status, events)'
+      'id, bet_id, market, market_type, pick, status, matches(provider_match_id, home_team, away_team, home_score, away_score, status, events)'
     )
     .eq('status', 'pending')
   if (selectionError) throw selectionError
